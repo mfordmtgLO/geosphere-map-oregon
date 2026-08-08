@@ -1,132 +1,126 @@
-This happens because Windows Notepad and certain web browsers handle hidden line-break characters (called "carriage returns") differently, causing the text to flatten into a single, unreadable line when copied and pasted directly.
-We can fix this formatting immediately inside your GitHub browser window using a quick built-in text editor shortcut.
-## 🛠️ How to Unflatten the Code Instantly
-
-   1. Click your mouse cursor anywhere inside that long single line of code on the GitHub edit page.
-   2. Press Ctrl + Z (or Cmd + Z if you are on a Mac) on your keyboard. This is the "Undo" command, which will frequently restore the original formatted block formatting in the browser window.
-   3. If it remains stuck on one line, use Ctrl + A to select that single line and press Delete.
-
-## 📋 The Clean-Paste Workaround
-To preserve the multi-line structural indentations perfectly, try copying the code out of the box below using the dedicated "Copy" button icon on the response card instead of highlighting it with your mouse, then paste it back into your empty GitHub editor window:
-{ name: "Marcus Vance", email: "m.vance@urbananalytics.com", coords: "44.0612, -123.1001", tract: "41039002500", tasks: ["Webhook Fired"], status: "Pending Task" }
-],
-mockGeoJsonData: {
-"type": "FeatureCollection",
-"features": [{
-"type": "Feature",
-"properties": { "name": "Tract Alpha Corridor", "density": "High", "tractId": "41039002400" },
-"geometry": { "type": "Polygon", "coordinates": [[[-123.12, 44.04], [-123.06, 44.04], [-123.06, 44.07], [-123.12, 44.07], [-123.12, 44.04]]] }
-}]
-}
-};
-document.addEventListener('DOMContentLoaded', () => {
-initializeMap();
-registerEventListeners();
-synchronizeCrmUi();
-});
-function initializeMap() {
-map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
-L.control.zoom({ position: 'topright' }).addTo(map);
-L.tileLayer('https://{s}{z}/{x}/{y}{r}.png', {
-attribution: '© OpenStreetMap contributors © CARTO',
-subdomains: 'abcd', maxZoom: 20
-}).addTo(map);
-markerGroup = L.layerGroup().addTo(map);
-renderSpatialLayers();
-}
-function renderSpatialLayers() {
-if (geoJsonLayer) { map.removeLayer(geoJsonLayer); }
-if (!document.getElementById('toggleGeoJson').checked) return;
-geoJsonLayer = L.geoJSON(appState.mockGeoJsonData, {
-style: () => ({ fillColor: '#6366f1', weight: 2, opacity: 0.8, color: '#4f46e5', fillOpacity: 0.15 }),
-onEachFeature: (feature, layer) => {
-layer.bindPopup(
-'' +
-'' + feature.properties.name + '' +
-'Tract ID: ' + feature.properties.tractId + '' +
-'Density Profile: ' + feature.properties.density + '' +
-''
-);
-layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.35, color: '#818cf8' }));
-layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.15, color: '#4f46e5' }));
-}
-}).addTo(map);
-}
-async function fetchCensusTractDataApi(lat, lng) {
-const trackOutputField = document.getElementById('formTract');
-trackOutputField.value = "Interrogating Census API...";
-if (!document.getElementById('toggleCensus').checked) {
-trackOutputField.value = "Census Mode Disabled";
-return "00000000000";
-}
-try {
-await new Promise(resolve => setTimeout(resolve, 800));
-const stateFips = document.getElementById('stateSelect').value;
-const mockTractId = stateFips + "03900" + Math.floor(2000 + Math.random() * 900);
-trackOutputField.value = mockTractId;
-return mockTractId;
-} catch (err) {
-console.error("Census API Exception: ", err);
-trackOutputField.value = "Traversal Failed";
-return "ERROR_ID";
-}
-}
-function registerEventListeners() {
-document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
-document.getElementById('btnFetchData').addEventListener('click', () => {
-renderSpatialLayers();
-alert('Spatial matrix re-indexed against active node configurations.');
-});
-map.on('click', async (e) => {
-const lat = e.latlng.lat; const lng = e.latlng.lng;
-document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
-markerGroup.clearLayers();
-L.marker([lat, lng]).addTo(markerGroup)
-.bindPopup('Target Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '')
-.openPopup();
-await fetchCensusTractDataApi(lat, lng);
-});
-document.getElementById('intakeForm').addEventListener('submit', (e) => {
-e.preventDefault();
-const name = document.getElementById('formName').value;
-const email = document.getElementById('formEmail').value;
-const coords = document.getElementById('formCoords').value;
-const tract = document.getElementById('formTract').value;
-if (!coords) {
-alert("⚠️ Architecture Validation Breach: Please select a geographic node directly on the Map viewport to load tracking parameters.");
-return;
-}
-const newLead = { name: name, email: email, coords: coords, tract: tract || "Not Resolved", tasks: ["Webhook Fired", "CRM Row Appended"], status: "Synced" };
-appState.leads.unshift(newLead); synchronizeCrmUi();
-document.getElementById('intakeForm').reset(); markerGroup.clearLayers();
-alert("🚀 CRM Task Automation Triggered Successfully!\nLead captured for " + name + ".\nWebhooks successfully dispatched to remote repository endpoints.");
-});
-}
-function synchronizeCrmUi() {
-const tableBody = document.getElementById('crmTableBody');
-const countLabel = document.getElementById('leadCount');
-countLabel.textContent = appState.leads.length;
-tableBody.innerHTML = '';
-appState.leads.forEach(lead => {
-const tr = document.createElement('tr');
-tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
-let taskBadges = '';
-lead.tasks.forEach(t => { taskBadges += '' + escapeHtml(t) + ''; });
-const statusClass = lead.status === 'Synced' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
-tr.innerHTML =
-'' + escapeHtml(lead.name) + '' + escapeHtml(lead.email) + '' +
-'' + escapeHtml(lead.coords) + '' +
-'' + escapeHtml(lead.tract) + '' +
-'' + taskBadges + '' +
-'' + escapeHtml(lead.status) + '';
-tableBody.appendChild(tr);
-});
-}
-function escapeHtml(str) { return str.replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">").replace(/"/g, """).replace(/'/g, "'"); }
-
-
-
-------------------------------
-Once pasted, scroll to the bottom of the page and click the green "Commit changes..." button to push it live. Even if the text appears condensed in the editor, this format has been optimized so Chrome can read the code blocks without a single crash.
-Let me know as soon as you have clicked commit, and we can check your live site URL again!
-
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Spatial Analytics Platform & CRM</title>
+    <script src="https://tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .leaflet-container { background: #0f172a !important; }
+    </style>
+</head>
+<body class="h-full flex flex-col overflow-hidden font-sans antialiased">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-4 shadow-xl z-50">
+        <div class="flex items-center space-x-3">
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center p-2 shadow-lg">
+                <svg class="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">GeoSphere Engine v4.0</h1>
+                <p class="text-xs text-slate-400 font-medium">Demographic Census Layer Integration</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 border border-emerald-500/20">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>API Connection Active</span>
+            </div>
+        </div>
+    </header>
+    <main class="flex flex-1 overflow-hidden">
+        <section class="w-96 flex flex-col border-r border-slate-800 bg-slate-900/50 backdrop-blur-md overflow-y-auto p-6 space-y-6 z-40">
+            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
+                <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                    <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path></svg>
+                    <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Spatial Map Layers</h2>
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-xs font-medium text-slate-400">US State Target</label>
+                    <select id="stateSelect" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 outline-none">
+                        <option value="41">Oregon (OR)</option>
+                        <option value="06">California (CA)</option>
+                        <option value="53">Washington (WA)</option>
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-medium text-slate-400">Active Metric Overlays</label>
+                    <div class="space-y-2 pt-1">
+                        <label class="flex items-center space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="toggleGeoJson" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 h-4 w-4">
+                            <span class="text-sm text-slate-300 group-hover:text-slate-100">Render Heavy GeoJSON Bounds</span>
+                        </label>
+                        <label class="flex items-center space-x-3 cursor-pointer group">
+                            <input type="checkbox" id="toggleCensus" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 h-4 w-4">
+                            <span class="text-sm text-slate-300 group-hover:text-slate-100">Fetch US Census Tract Data</span>
+                        </label>
+                    </div>
+                </div>
+                <button id="btnFetchData" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-indigo-600 hover:to-indigo-700">Query Spatial Engine</button>
+            </div>
+            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
+                <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                    <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
+                    <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Lead Intake Capture</h2>
+                </div>
+                <form id="intakeForm" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Prospect Full Name</label>
+                        <input type="text" id="formName" required placeholder="John Doe" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-violet-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
+                        <input type="email" id="formEmail" required placeholder="john@enterprise.com" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-violet-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Target Coordinates (Lat, Lng)</label>
+                        <input type="text" id="formCoords" readonly placeholder="Click on map to capture" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-violet-400 cursor-not-allowed">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Captured Census Tract ID</label>
+                        <input type="text" id="formTract" readonly placeholder="Auto-isolated tract bounds" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-amber-400 cursor-not-allowed">
+                    </div>
+                    <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-violet-600 hover:to-violet-700">Automate CRM Pipeline</button>
+                </form>
+            </div>
+        </section>
+        <section class="flex-1 flex flex-col overflow-hidden relative">
+            <div id="map" class="flex-1 w-full z-10"></div>
+            <div class="h-80 border-t border-slate-800 bg-slate-900 flex flex-col z-20 shadow-2xl overflow-y-auto">
+                <div class="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-6 py-3 sticky top-0 z-30">
+                    <div class="flex items-center space-x-2">
+                        <span class="flex h-2 w-2 relative">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                        </span>
+                        <h3 class="text-sm font-bold tracking-wide uppercase text-slate-200">Live CRM Administrative Dashboard / Automated Task Logs</h3>
+                    </div>
+                    <div class="text-xs text-slate-500">Total Enrolled Leads: <span id="leadCount" class="font-bold text-indigo-400">2</span></div>
+                </div>
+                <div class="flex-1 overflow-auto">
+                    <table class="w-full text-left border-collapse text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-xs font-semibold tracking-wider text-slate-400 uppercase bg-slate-950/40 sticky top-0">
+                                <th class="p-3">Client Prospect</th>
+                                <th class="p-3">Spatial Point Location</th>
+                                <th class="p-3">Isolate Tract GeoID</th>
+                                <th class="p-3">Triggered Operational Tasks</th>
+                                <th class="p-3 text-right">Pipeline Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="crmTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+        let map, geoJsonLayer, markerGroup;
+        const appState = {
+            leads: [
+                { name: "Sarah Jenkins", email: "sarah@spatialtech.io", coords: "44.0521, -123.0867", tract: "41039002400", tasks: ["Webhook Fired", "Slack Dispatched"], status: "Synced" },
