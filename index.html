@@ -205,193 +205,342 @@
     </main>
 
     <script>
-        // --- 1. LOCAL DATA MATRIX DECLARATIONS ---
-        let map, geoJsonLayer, markerGroup;
+        <script>
+    // --- 0. API HARD STOP SYSTEM ---
+    const RENTCAST_API_KEY = 'YOUR_API_KEY_HERE';
+    const RENTCAST_BASE_URL = 'https://api.rentcast.io/v1';
+    const MAX_PULLS = 50;
+    let propertyValueCache = {};
+    
+    function getApiCount() {
+        return parseInt(localStorage.getItem('rentcast_api_count') || '0');
+    }
+    
+    function setApiCount(count) {
+        localStorage.setItem('rentcast_api_count', count.toString());
+        updateApiCounterUI();
+    }
+    
+    function incrementApiCount() {
+        const current = getApiCount();
+        if (current >= MAX_PULLS) return false;
+        setApiCount(current + 1);
+        return true;
+    }
+    
+    function isApiHardStopped() {
+        return getApiCount() >= MAX_PULLS;
+    }
+    
+    function resetApiCounter() {
+        if (confirm('Reset RentCast API counter to 0? Only do this when your billing cycle renews.')) {
+            setApiCount(0);
+            propertyValueCache = {};
+            alert('✅ API counter reset. Pulls available: ' + MAX_PULLS);
+        }
+    }
+    
+    function updateApiCounterUI() {
+        const count = getApiCount();
+        const counterEl = document.getElementById('apiCounterColor');
+        const progressBar = document.getElementById('apiProgressBar');
+        const statusEl = document.getElementById('apiStatus');
+        const hardStopWarning = document.getElementById('apiHardStopWarning');
         
-        const appState = {
-            leads: [
-                { name: "Sarah Jenkins", email: "sarah@spatialtech.io", coords: "44.0521, -123.0867", tract: "41039002400", tasks: ["Webhook Fired", "Slack Dispatched"], status: "Synced" },
-                { name: "Marcus Vance", email: "m.vance@urbananalytics.com", coords: "44.0612, -123.1001", tract: "41039002500", tasks: ["Webhook Fired"], status: "Pending Task" }
-            ],
-            mockGeoJsonData: {
-                "type": "FeatureCollection",
-                "features": [
-                    {
-                        "type": "Feature",
-                        "properties": { "name": "Tract Alpha Corridor", "density": "High", "tractId": "41039002400" },
-                        "geometry": {
-                            "type": "Polygon",
-                            "coordinates": [[
-                                [-123.12, 44.04], [-123.06, 44.04], [-123.06, 44.07], [-123.12, 44.07], [-123.12, 44.04]
-                            ]]
-                        }
+        if (counterEl) counterEl.textContent = count;
+        
+        const percentage = Math.min((count / MAX_PULLS) * 100, 100);
+        if (progressBar) progressBar.style.width = percentage + '%';
+        
+        // Color coding
+        if (count >= MAX_PULLS) {
+            progressBar.style.background = '#ef4444';
+            counterEl.style.color = '#ef4444';
+            statusEl.textContent = '🚫 HARD STOP — 50/50 reached';
+            statusEl.className = 'text-xs text-red-400 text-center font-semibold';
+            hardStopWarning.classList.remove('hidden');
+        } else if (count >= 40) {
+            progressBar.style.background = '#f59e0b';
+            counterEl.style.color = '#f59e0b';
+            statusEl.textContent = '⚠️ Approaching limit — ' + (MAX_PULLS - count) + ' pulls remaining';
+            statusEl.className = 'text-xs text-amber-400 text-center';
+            hardStopWarning.classList.add('hidden');
+        } else if (count >= 25) {
+            progressBar.style.background = '#facc15';
+            counterEl.style.color = '#facc15';
+            statusEl.textContent = 'Active — ' + (MAX_PULLS - count) + ' pulls remaining';
+            statusEl.className = 'text-xs text-slate-400 text-center';
+            hardStopWarning.classList.add('hidden');
+        } else {
+            progressBar.style.background = '#22c55e';
+            counterEl.style.color = '#22c55e';
+            statusEl.textContent = 'Ready — ' + (MAX_PULLS - count) + ' pulls available';
+            statusEl.className = 'text-xs text-slate-400 text-center';
+            hardStopWarning.classList.add('hidden');
+        }
+    }
+    
+    // --- 1. LOCAL DATA MATRIX DECLARATIONS ---
+    let map, geoJsonLayer, markerGroup;
+    
+    const appState = {
+        leads: [
+            { name: "Sarah Jenkins", email: "sarah@spatialtech.io", coords: "44.0521, -123.0867", tract: "41039002400", tasks: ["Webhook Fired", "Slack Dispatched"], status: "Synced" },
+            { name: "Marcus Vance", email: "m.vance@urbananalytics.com", coords: "44.0612, -123.1001", tract: "41039002500", tasks: ["Webhook Fired"], status: "Pending Task" }
+        ],
+        mockGeoJsonData: {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": { "name": "Tract Alpha Corridor", "density": "High", "tractId": "41039002400" },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [-123.12, 44.04], [-123.06, 44.04], [-123.06, 44.07], [-123.12, 44.07], [-123.12, 44.04]
+                        ]]
                     }
-                ]
-            }
-        };
+                }
+            ]
+        }
+    };
 
-        // --- 2. AUTOMATIC CORE LIFECYCLE HANDLERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeMap();
-            registerEventListeners();
-            synchronizeCrmUi();
+    // --- 2. AUTOMATIC CORE LIFECYCLE HANDLERS ---
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeMap();
+        registerEventListeners();
+        synchronizeCrmUi();
+        updateApiCounterUI();
+    });
+
+    function initializeMap() {
+        map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
+        L.control.zoom({ position: 'topright' }).addTo(map);
+
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        markerGroup = L.layerGroup().addTo(map);
+        renderSpatialLayers();
+    }
+
+    // --- 3. GEOGRAPHIC COMPUTATION & REVERSE QUERY CHANNELS ---
+    function renderSpatialLayers() {
+        if (geoJsonLayer) { map.removeLayer(geoJsonLayer); }
+        if (!document.getElementById('toggleGeoJson').checked) return;
+
+        geoJsonLayer = L.geoJSON(appState.mockGeoJsonData, {
+            style: () => ({
+                fillColor: '#6366f1',
+                weight: 2,
+                opacity: 0.8,
+                color: '#4f46e5',
+                fillOpacity: 0.15
+            }),
+            onEachFeature: (feature, layer) => {
+                layer.bindPopup(
+                    '<div class="p-2 bg-slate-900 text-slate-100 text-xs rounded font-sans">' +
+                    '<strong class="text-indigo-400 block text-sm">' + feature.properties.name + '</strong>' +
+                    '<div class="mt-1">Tract ID: <span class="font-mono text-amber-400">' + feature.properties.tractId + '</span></div>' +
+                    '<div>Density Profile: ' + feature.properties.density + '</div>' +
+                    '</div>'
+                );
+                layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.35, color: '#818cf8' }));
+                layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.15, color: '#4f46e5' }));
+            }
+        }).addTo(map);
+    }
+
+    async function fetchCensusTractDataApi(lat, lng) {
+        const trackOutputField = document.getElementById('formTract');
+        trackOutputField.value = "Interrogating Census API...";
+
+        if (!document.getElementById('toggleCensus').checked) {
+            trackOutputField.value = "Census Mode Disabled";
+            return "00000000000";
+        }
+
+        try {
+            await new Promise(resolve => setTimeout(resolve, 800));
+            const stateFips = document.getElementById('stateSelect').value;
+            const mockTractId = stateFips + "03900" + Math.floor(2000 + Math.random() * 900);
+            trackOutputField.value = mockTractId;
+            return mockTractId;
+        } catch (err) {
+            console.error("Census API Exception: ", err);
+            trackOutputField.value = "Traversal Failed";
+            return "ERROR_ID";
+        }
+    }
+    
+    // --- RENTCAST PROPERTY VALUE FETCH ---
+    async function fetchPropertyValue(lat, lng) {
+        const cacheKey = `${lat},${lng}`;
+        const tractField = document.getElementById('formTract');
+        
+        // HARD STOP CHECK
+        if (isApiHardStopped()) {
+            tractField.value = "API LIMIT REACHED - 50/50";
+            alert('🚫 RentCast API hard stop active. Monthly limit of 50 pulls reached.\n\nUse the "Reset Monthly Counter" button when your billing cycle renews.');
+            return null;
+        }
+        
+        // Check cache
+        if (propertyValueCache[cacheKey]) {
+            tractField.value = "Value: " + propertyValueCache[cacheKey].formatted;
+            return propertyValueCache[cacheKey];
+        }
+        
+        try {
+            const response = await fetch(`${RENTCAST_BASE_URL}/avm/value?latitude=${lat}&longitude=${lng}`, {
+                method: 'GET',
+                headers: {
+                    'X-API-Key': RENTCAST_API_KEY,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
+            }
+            
+            // SUCCESS — increment the counter
+            const allowed = incrementApiCount();
+            if (!allowed) {
+                tractField.value = "API LIMIT REACHED - 50/50";
+                return null;
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.estimate) {
+                const formattedValue = new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: 'USD',
+                    maximumFractionDigits: 0
+                }).format(data.estimate);
+                
+                const result = {
+                    raw: data.estimate,
+                    formatted: formattedValue,
+                    rangeLow: data.rangeLow,
+                    rangeHigh: data.rangeHigh
+                };
+                
+                propertyValueCache[cacheKey] = result;
+                tractField.value = "Value: " + formattedValue;
+                return result;
+            } else {
+                tractField.value = "No valuation data";
+                return null;
+            }
+            
+        } catch (error) {
+            console.error('RentCast API Error:', error);
+            tractField.value = "API Error - Try Again";
+            return null;
+        }
+    }
+
+    // --- 4. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
+    function registerEventListeners() {
+        document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
+        document.getElementById('btnFetchData').addEventListener('click', () => {
+            renderSpatialLayers();
+            alert('Spatial matrix re-indexed against active node configurations.');
+        });
+        
+        document.getElementById('btnResetApiCounter').addEventListener('click', resetApiCounter);
+
+        map.on('click', async (e) => {
+            const lat = e.latlng.lat;
+            const lng = e.latlng.lng;
+            
+            document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
+            
+            markerGroup.clearLayers();
+            L.marker([lat, lng]).addTo(markerGroup)
+                .bindPopup('<span class="text-xs font-mono text-slate-900">Target Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>')
+                .openPopup();
+
+            await fetchCensusTractDataApi(lat, lng);
+            await fetchPropertyValue(lat, lng);
         });
 
-        function initializeMap() {
-            map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
-            L.control.zoom({ position: 'topright' }).addTo(map);
-
-           L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19
-}).addTo(map);
-
-            markerGroup = L.layerGroup().addTo(map);
-            renderSpatialLayers();
-        }
-
-        // --- 3. GEOGRAPHIC COMPUTATION & REVERSE QUERY CHANNELS ---
-        function renderSpatialLayers() {
-            if (geoJsonLayer) { map.removeLayer(geoJsonLayer); }
-            if (!document.getElementById('toggleGeoJson').checked) return;
-
-            geoJsonLayer = L.geoJSON(appState.mockGeoJsonData, {
-                style: () => ({
-                    fillColor: '#6366f1',
-                    weight: 2,
-                    opacity: 0.8,
-                    color: '#4f46e5',
-                    fillOpacity: 0.15
-                }),
-                onEachFeature: (feature, layer) => {
-                    layer.bindPopup(
-                        '<div class="p-2 bg-slate-900 text-slate-100 text-xs rounded font-sans">' +
-                        '<strong class="text-indigo-400 block text-sm">' + feature.properties.name + '</strong>' +
-                        '<div class="mt-1">Tract ID: <span class="font-mono text-amber-400">' + feature.properties.tractId + '</span></div>' +
-                        '<div>Density Profile: ' + feature.properties.density + '</div>' +
-                        '</div>'
-                    );
-                    layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.35, color: '#818cf8' }));
-                    layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.15, color: '#4f46e5' }));
-                }
-            }).addTo(map);
-        }
-
-        async function fetchCensusTractDataApi(lat, lng) {
-            const trackOutputField = document.getElementById('formTract');
-            trackOutputField.value = "Interrogating Census API...";
-
-            if (!document.getElementById('toggleCensus').checked) {
-                trackOutputField.value = "Census Mode Disabled";
-                return "00000000000";
-            }
-
-            try {
-                await new Promise(resolve => setTimeout(resolve, 800));
-                const stateFips = document.getElementById('stateSelect').value;
-                const mockTractId = stateFips + "03900" + Math.floor(2000 + Math.random() * 900);
-                trackOutputField.value = mockTractId;
-                return mockTractId;
-            } catch (err) {
-                console.error("Census API Exception: ", err);
-                trackOutputField.value = "Traversal Failed";
-                return "ERROR_ID";
-            }
-        }
-
-        // --- 4. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
-        function registerEventListeners() {
-            document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
-            document.getElementById('btnFetchData').addEventListener('click', () => {
-                renderSpatialLayers();
-                alert('Spatial matrix re-indexed against active node configurations.');
-            });
-
-            map.on('click', async (e) => {
-                const lat = e.latlng.lat;
-                const lng = e.latlng.lng;
-                
-                document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
-                
-                markerGroup.clearLayers();
-                L.marker([lat, lng]).addTo(markerGroup)
-                    .bindPopup('<span class="text-xs font-mono text-slate-900">Target Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>')
-                    .openPopup();
-
-                await fetchCensusTractDataApi(lat, lng);
-            });
-
-            document.getElementById('intakeForm').addEventListener('submit', (e) => {
-                e.preventDefault();
-                
-                const name = document.getElementById('formName').value;
-                const email = document.getElementById('formEmail').value;
-                const coords = document.getElementById('formCoords').value;
-                const tract = document.getElementById('formTract').value;
-
-                if (!coords) {
-                    alert("⚠️ Architecture Validation Breach: Please select a geographic node directly on the Map viewport to load tracking parameters.");
-                    return;
-                }
-
-                const newLead = {
-                    name: name,
-                    email: email,
-                    coords: coords,
-                    tract: tract || "Not Resolved",
-                    tasks: ["Webhook Fired", "CRM Row Appended"],
-                    status: "Synced"
-                };
-
-                appState.leads.unshift(newLead);
-                synchronizeCrmUi();
-                
-                document.getElementById('intakeForm').reset();
-                markerGroup.clearLayers();
-                
-                alert("🚀 CRM Task Automation Triggered Successfully!\nLead captured for " + name + ".\nWebhooks successfully dispatched to remote repository endpoints.");
-            });
-        }
-
-        // --- 5. VISUAL GRAPHICS ENGINE TERMINALS ---
-        function synchronizeCrmUi() {
-            const tableBody = document.getElementById('crmTableBody');
-            const countLabel = document.getElementById('leadCount');
+        document.getElementById('intakeForm').addEventListener('submit', (e) => {
+            e.preventDefault();
             
-            countLabel.textContent = appState.leads.length;
-            tableBody.innerHTML = '';
+            const name = document.getElementById('formName').value;
+            const email = document.getElementById('formEmail').value;
+            const coords = document.getElementById('formCoords').value;
+            const tract = document.getElementById('formTract').value;
 
-            appState.leads.forEach(lead => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
-                
-                let taskBadges = '';
-                lead.tasks.forEach(t => {
-                    taskBadges += '<span class="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-300 border border-slate-700 mr-1">' + escapeHtml(t) + '</span>';
-                });
+            if (!coords) {
+                alert("⚠️ Architecture Validation Breach: Please select a geographic node directly on the Map viewport to load tracking parameters.");
+                return;
+            }
 
-                const statusClass = lead.status === 'Synced' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+            const newLead = {
+                name: name,
+                email: email,
+                coords: coords,
+                tract: tract || "Not Resolved",
+                tasks: ["Webhook Fired", "CRM Row Appended"],
+                status: "Synced"
+            };
 
-                tr.innerHTML = 
-                    '<td class="p-3">' +
-                        '<div class="font-semibold text-slate-200">' + escapeHtml(lead.name) + '</div>' +
-                        '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div>' +
-                    '</td>' +
-                    '<td class="p-3 font-mono text-xs text-slate-400">' + escapeHtml(lead.coords) + '</td>' +
-                    '<td class="p-3 font-mono text-xs text-amber-400">' + escapeHtml(lead.tract) + '</td>' +
-                    '<td class="p-3"><div class="flex flex-wrap gap-1">' + taskBadges + '</div></td>' +
-                    '<td class="p-3 text-right">' +
-                        '<span class="inline-flex rounded-full ' + statusClass + ' px-2 py-0.5 text-xs font-semibold">' +
-                            escapeHtml(lead.status) +
-                        '</span>' +
-                    '</td>';
-                tableBody.appendChild(tr);
+            appState.leads.unshift(newLead);
+            synchronizeCrmUi();
+            
+            document.getElementById('intakeForm').reset();
+            markerGroup.clearLayers();
+            
+            alert("🚀 CRM Task Automation Triggered Successfully!\nLead captured for " + name + ".\nWebhooks successfully dispatched to remote repository endpoints.");
+        });
+    }
+
+    // --- 5. VISUAL GRAPHICS ENGINE TERMINALS ---
+    function synchronizeCrmUi() {
+        const tableBody = document.getElementById('crmTableBody');
+        const countLabel = document.getElementById('leadCount');
+        
+        countLabel.textContent = appState.leads.length;
+        tableBody.innerHTML = '';
+
+        appState.leads.forEach(lead => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+            
+            let taskBadges = '';
+            lead.tasks.forEach(t => {
+                taskBadges += '<span class="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-300 border border-slate-700 mr-1">' + escapeHtml(t) + '</span>';
             });
-        }
 
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
+            const statusClass = lead.status === 'Synced' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+
+            tr.innerHTML = 
+                '<td class="p-3">' +
+                    '<div class="font-semibold text-slate-200">' + escapeHtml(lead.name) + '</div>' +
+                    '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div>' +
+                '</td>' +
+                '<td class="p-3 font-mono text-xs text-slate-400">' + escapeHtml(lead.coords) + '</td>' +
+                '<td class="p-3 font-mono text-xs text-amber-400">' + escapeHtml(lead.tract) + '</td>' +
+                '<td class="p-3"><div class="flex flex-wrap gap-1">' + taskBadges + '</div></td>' +
+                '<td class="p-3 text-right">' +
+                    '<span class="inline-flex rounded-full ' + statusClass + ' px-2 py-0.5 text-xs font-semibold">' +
+                        escapeHtml(lead.status) +
+                    '</span>' +
+                '</td>';
+            tableBody.appendChild(tr);
+        });
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+</script>
     </script>
 </body>
 </html>
