@@ -1,3 +1,4 @@
+// Vercel serverless function - RentCast API proxy v2
 export default async function handler(req, res) {
     const { city, county, state, zipCode, limit } = req.query;
     
