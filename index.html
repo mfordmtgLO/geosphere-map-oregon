@@ -207,8 +207,7 @@
     <script>
     
     // --- 0. API HARD STOP SYSTEM ---
-    const RENTCAST_API_KEY = 'c7df2a49bf304045a0483ffa39f9f6de';
-    const RENTCAST_BASE_URL = 'https://api.rentcast.io/v1';
+       // API key stored in Vercel Environment Variables — never exposed to browser
     const MAX_PULLS = 50;
     let propertyValueCache = {};
     
@@ -393,14 +392,9 @@
             return propertyValueCache[cacheKey];
         }
         
-        try {
-            const response = await fetch(`${RENTCAST_BASE_URL}/avm/value?latitude=${lat}&longitude=${lng}`, {
-                method: 'GET',
-                headers: {
-                    'X-API-Key': RENTCAST_API_KEY,
-                    'Accept': 'application/json'
-                }
-            });
+               try {
+            // Calls Vercel serverless function — API key stays hidden on the server
+            const response = await fetch(`/api/rentcast?lat=${lat}&lng=${lng}`);
             
             if (!response.ok) {
                 throw new Error(`API Error: ${response.status}`);
