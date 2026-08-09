@@ -4,9 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Enterprise Spatial Analytics Platform & CRM</title>
+    
+    <!-- Modern Framework Scripts Hosted via Public CDN Arrays -->
     <script src="https://tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <script src="https://unpkg.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
     <style>
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
@@ -16,10 +19,14 @@
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
+
+    <!-- Top Application Dashboard Navigation Bar Header -->
     <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-4 shadow-xl z-50">
         <div class="flex items-center space-x-3">
-            <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center p-2 shadow-lg">
-                <svg class="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path></svg>
+            <div class="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-600 flex items-center justify-center p-2 shadow-lg shadow-indigo-500/20">
+                <svg class="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"></path>
+                </svg>
             </div>
             <div>
                 <h1 class="text-lg font-bold tracking-tight text-white">GeoSphere Engine v4.0</h1>
@@ -33,21 +40,29 @@
             </div>
         </div>
     </header>
+
+    <!-- Split Screen System Workspace Application Core -->
     <main class="flex flex-1 overflow-hidden">
+        
+        <!-- Left Panel Sidebar Control Panels -->
         <section class="w-96 flex flex-col border-r border-slate-800 bg-slate-900/50 backdrop-blur-md overflow-y-auto p-6 space-y-6 z-40">
+            
+            <!-- Spatial Map Manipulation Layer Toggles Box -->
             <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
                     <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path></svg>
                     <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Spatial Map Layers</h2>
                 </div>
+                
                 <div class="space-y-3">
                     <label class="block text-xs font-medium text-slate-400">US State Target</label>
-                    <select id="stateSelect" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 outline-none">
+                    <select id="stateSelect" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 outline-none transition focus:border-indigo-500">
                         <option value="41">Oregon (OR)</option>
                         <option value="06">California (CA)</option>
                         <option value="53">Washington (WA)</option>
                     </select>
                 </div>
+
                 <div class="space-y-2">
                     <label class="block text-xs font-medium text-slate-400">Active Metric Overlays</label>
                     <div class="space-y-2 pt-1">
@@ -61,36 +76,50 @@
                         </label>
                     </div>
                 </div>
-                <button id="btnFetchData" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-indigo-600 hover:to-indigo-700">Query Spatial Engine</button>
+
+                <button id="btnFetchData" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700">
+                    Query Spatial Engine
+                </button>
             </div>
+
+            <!-- CRM Client Intake Capture Processing Box -->
             <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
                     <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
                     <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Lead Intake Capture</h2>
                 </div>
+                
                 <form id="intakeForm" class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Prospect Full Name</label>
-                        <input type="text" id="formName" required placeholder="John Doe" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-violet-500">
+                        <input type="text" id="formName" required placeholder="John Doe" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-violet-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
-                        <input type="email" id="formEmail" required placeholder="john@enterprise.com" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-violet-500">
+                        <input type="email" id="formEmail" required placeholder="john@enterprise.com" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-violet-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Target Coordinates (Lat, Lng)</label>
-                        <input type="text" id="formCoords" readonly placeholder="Click on map to capture" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-violet-400 cursor-not-allowed">
+                        <input type="text" id="formCoords" readonly placeholder="Click on map to capture" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-violet-400 placeholder-slate-600 cursor-not-allowed">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Captured Census Tract ID</label>
-                        <input type="text" id="formTract" readonly placeholder="Auto-isolated tract bounds" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-amber-400 cursor-not-allowed">
+                        <input type="text" id="formTract" readonly placeholder="Auto-isolated tract bounds" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-mono text-amber-400 placeholder-slate-600 cursor-not-allowed">
                     </div>
-                    <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-violet-600 hover:to-violet-700">Automate CRM Pipeline</button>
+                    <button type="submit" class="w-full rounded-xl bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-violet-500/10 hover:from-violet-600 hover:to-violet-700">
+                        Automate CRM Pipeline
+                    </button>
                 </form>
             </div>
         </section>
+
+        <!-- Right Split Main Window Area (Map Container + Bottom CRM Table Data Logs) -->
         <section class="flex-1 flex flex-col overflow-hidden relative">
+            
+            <!-- Map Main Canvas Mount Point Layer Frame -->
             <div id="map" class="flex-1 w-full z-10"></div>
+
+            <!-- Bottom Live Operational Activity Real Time Drawer Logs -->
             <div class="h-80 border-t border-slate-800 bg-slate-900 flex flex-col z-20 shadow-2xl overflow-y-auto">
                 <div class="flex items-center justify-between border-b border-slate-800 bg-slate-950 px-6 py-3 sticky top-0 z-30">
                     <div class="flex items-center space-x-2">
@@ -100,8 +129,11 @@
                         </span>
                         <h3 class="text-sm font-bold tracking-wide uppercase text-slate-200">Live CRM Administrative Dashboard / Automated Task Logs</h3>
                     </div>
-                    <div class="text-xs text-slate-500">Total Enrolled Leads: <span id="leadCount" class="font-bold text-indigo-400">2</span></div>
+                    <div class="text-xs text-slate-500">
+                        Total Enrolled Leads: <span id="leadCount" class="font-bold text-indigo-400">2</span>
+                    </div>
                 </div>
+
                 <div class="flex-1 overflow-auto">
                     <table class="w-full text-left border-collapse text-sm">
                         <thead>
@@ -113,15 +145,204 @@
                                 <th class="p-3 text-right">Pipeline Status</th>
                             </tr>
                         </thead>
-                        <tbody id="crmTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                        <tbody id="crmTableBody" class="divide-y divide-slate-800/60 font-medium">
+                        </tbody>
                     </table>
                 </div>
             </div>
         </section>
     </main>
+
     <script>
+        // --- 1. LOCAL DATA MATRIX DECLARATIONS ---
         let map, geoJsonLayer, markerGroup;
+        
         const appState = {
             leads: [
                 { name: "Sarah Jenkins", email: "sarah@spatialtech.io", coords: "44.0521, -123.0867", tract: "41039002400", tasks: ["Webhook Fired", "Slack Dispatched"], status: "Synced" },
-                )
+                { name: "Marcus Vance", email: "m.vance@urbananalytics.com", coords: "44.0612, -123.1001", tract: "41039002500", tasks: ["Webhook Fired"], status: "Pending Task" }
+            ],
+            mockGeoJsonData: {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": { "name": "Tract Alpha Corridor", "density": "High", "tractId": "41039002400" },
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[
+                                [-123.12, 44.04], [-123.06, 44.04], [-123.06, 44.07], [-123.12, 44.07], [-123.12, 44.04]
+                            ]]
+                        }
+                    }
+                ]
+            }
+        };
+
+        // --- 2. AUTOMATIC CORE LIFECYCLE HANDLERS ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeMap();
+            registerEventListeners();
+            synchronizeCrmUi();
+        });
+
+        function initializeMap() {
+            map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
+            L.control.zoom({ position: 'topright' }).addTo(map);
+
+            L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            markerGroup = L.layerGroup().addTo(map);
+            renderSpatialLayers();
+        }
+
+        // --- 3. GEOGRAPHIC COMPUTATION & REVERSE QUERY CHANNELS ---
+        function renderSpatialLayers() {
+            if (geoJsonLayer) { map.removeLayer(geoJsonLayer); }
+            if (!document.getElementById('toggleGeoJson').checked) return;
+
+            geoJsonLayer = L.geoJSON(appState.mockGeoJsonData, {
+                style: () => ({
+                    fillColor: '#6366f1',
+                    weight: 2,
+                    opacity: 0.8,
+                    color: '#4f46e5',
+                    fillOpacity: 0.15
+                }),
+                onEachFeature: (feature, layer) => {
+                    layer.bindPopup(
+                        '<div class="p-2 bg-slate-900 text-slate-100 text-xs rounded font-sans">' +
+                        '<strong class="text-indigo-400 block text-sm">' + feature.properties.name + '</strong>' +
+                        '<div class="mt-1">Tract ID: <span class="font-mono text-amber-400">' + feature.properties.tractId + '</span></div>' +
+                        '<div>Density Profile: ' + feature.properties.density + '</div>' +
+                        '</div>'
+                    );
+                    layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.35, color: '#818cf8' }));
+                    layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.15, color: '#4f46e5' }));
+                }
+            }).addTo(map);
+        }
+
+        async function fetchCensusTractDataApi(lat, lng) {
+            const trackOutputField = document.getElementById('formTract');
+            trackOutputField.value = "Interrogating Census API...";
+
+            if (!document.getElementById('toggleCensus').checked) {
+                trackOutputField.value = "Census Mode Disabled";
+                return "00000000000";
+            }
+
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                const stateFips = document.getElementById('stateSelect').value;
+                const mockTractId = stateFips + "03900" + Math.floor(2000 + Math.random() * 900);
+                trackOutputField.value = mockTractId;
+                return mockTractId;
+            } catch (err) {
+                console.error("Census API Exception: ", err);
+                trackOutputField.value = "Traversal Failed";
+                return "ERROR_ID";
+            }
+        }
+
+        // --- 4. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
+        function registerEventListeners() {
+            document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
+            document.getElementById('btnFetchData').addEventListener('click', () => {
+                renderSpatialLayers();
+                alert('Spatial matrix re-indexed against active node configurations.');
+            });
+
+            map.on('click', async (e) => {
+                const lat = e.latlng.lat;
+                const lng = e.latlng.lng;
+                
+                document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
+                
+                markerGroup.clearLayers();
+                L.marker([lat, lng]).addTo(markerGroup)
+                    .bindPopup('<span class="text-xs font-mono text-slate-900">Target Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>')
+                    .openPopup();
+
+                await fetchCensusTractDataApi(lat, lng);
+            });
+
+            document.getElementById('intakeForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('formName').value;
+                const email = document.getElementById('formEmail').value;
+                const coords = document.getElementById('formCoords').value;
+                const tract = document.getElementById('formTract').value;
+
+                if (!coords) {
+                    alert("⚠️ Architecture Validation Breach: Please select a geographic node directly on the Map viewport to load tracking parameters.");
+                    return;
+                }
+
+                const newLead = {
+                    name: name,
+                    email: email,
+                    coords: coords,
+                    tract: tract || "Not Resolved",
+                    tasks: ["Webhook Fired", "CRM Row Appended"],
+                    status: "Synced"
+                };
+
+                appState.leads.unshift(newLead);
+                synchronizeCrmUi();
+                
+                document.getElementById('intakeForm').reset();
+                markerGroup.clearLayers();
+                
+                alert("🚀 CRM Task Automation Triggered Successfully!\nLead captured for " + name + ".\nWebhooks successfully dispatched to remote repository endpoints.");
+            });
+        }
+
+        // --- 5. VISUAL GRAPHICS ENGINE TERMINALS ---
+        function synchronizeCrmUi() {
+            const tableBody = document.getElementById('crmTableBody');
+            const countLabel = document.getElementById('leadCount');
+            
+            countLabel.textContent = appState.leads.length;
+            tableBody.innerHTML = '';
+
+            appState.leads.forEach(lead => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition border-b border-slate-800/60";
+                
+                let taskBadges = '';
+                lead.tasks.forEach(t => {
+                    taskBadges += '<span class="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-slate-300 border border-slate-700 mr-1">' + escapeHtml(t) + '</span>';
+                });
+
+                const statusClass = lead.status === 'Synced' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20';
+
+                tr.innerHTML = 
+                    '<td class="p-3">' +
+                        '<div class="font-semibold text-slate-200">' + escapeHtml(lead.name) + '</div>' +
+                        '<div class="text-xs text-slate-500">' + escapeHtml(lead.email) + '</div>' +
+                    '</td>' +
+                    '<td class="p-3 font-mono text-xs text-slate-400">' + escapeHtml(lead.coords) + '</td>' +
+                    '<td class="p-3 font-mono text-xs text-amber-400">' + escapeHtml(lead.tract) + '</td>' +
+                    '<td class="p-3"><div class="flex flex-wrap gap-1">' + taskBadges + '</div></td>' +
+                    '<td class="p-3 text-right">' +
+                        '<span class="inline-flex rounded-full ' + statusClass + ' px-2 py-0.5 text-xs font-semibold">' +
+                            escapeHtml(lead.status) +
+                        '</span>' +
+                    '</td>';
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>
+        
