@@ -85,7 +85,16 @@
                     </div>
                 </div>
 
-                <button id="btnFetchData" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700">
+                               <!-- Property Search -->
+                <div class="space-y-2 pt-2 border-t border-slate-800">
+                    <label class="block text-xs font-medium text-slate-400">Search Oregon Properties</label>
+                    <input type="text" id="searchInput" placeholder="Address, city, or county in Oregon..." 
+                           class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500">
+                    <button id="btnSearch" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700">
+                        🔍 Search Listings
+                    </button>
+                    <p id="searchError" class="text-xs text-red-400 hidden mt-1"></p>
+                </div>
                     Query Spatial Engine
                 </button>
             </div>
@@ -206,11 +215,17 @@
 
     <script>
     
-    // --- 0. API HARD STOP SYSTEM ---
-       // API key stored in Vercel Environment Variables — never exposed to browser
+    <script>
+    // --- 0. CONFIGURATION ---
+    // API key stored in Vercel Environment Variables — never exposed to browser
     const MAX_PULLS = 50;
+    
+    // 🔧 TEST MODE: Set to true to test without using API pulls
+    const TEST_MODE = false;
+    
     let propertyValueCache = {};
     
+    // --- 1. API HARD STOP SYSTEM ---
     function getApiCount() {
         return parseInt(localStorage.getItem('rentcast_api_count') || '0');
     }
@@ -251,7 +266,6 @@
         const percentage = Math.min((count / MAX_PULLS) * 100, 100);
         if (progressBar) progressBar.style.width = percentage + '%';
         
-        // Color coding
         if (count >= MAX_PULLS) {
             progressBar.style.background = '#ef4444';
             counterEl.style.color = '#ef4444';
@@ -279,7 +293,57 @@
         }
     }
     
-    // --- 1. LOCAL DATA MATRIX DECLARATIONS ---
+    // --- 2. OREGON LOCATION VALIDATION ---
+    function isOregonLocation(query) {
+        const q = query.toLowerCase();
+        // Major Oregon cities
+        const oregonCities = [
+            'portland', 'salem', 'eugene', 'gresham', 'hillsboro', 'beaverton',
+            'bend', 'medford', 'springfield', 'corvallis', 'albany', 'tigard',
+            'lake oswego', 'keizer', 'grants pass', 'oregon city', 'mcminnville',
+            'redmond', 'tualatin', 'west linn', 'woodburn', 'forest grove',
+            'wilsonville', 'roseburg', 'klamath falls', 'ashland', 'milwaukie',
+            'sherwood', 'central point', 'canby', 'troutdale', 'coos bay',
+            'the dalles', 'st helens', 'la grande', 'hermiston', 'newport',
+            'ontario', 'prineville', 'dallas', 'lebanon', 'gladstone'
+        ];
+        
+        // Oregon counties
+        const oregonCounties = [
+            'multnomah', 'washington', 'clackamas', 'lane', 'marion', 'jackson',
+            'deschutes', 'linn', 'yamhill', 'benton', 'josephine', 'douglas',
+            'polk', 'coos', 'columbia', 'umatilla', 'klamath', 'lincoln',
+            'malheur', 'clatsop', 'union', 'tillamook', 'wasco', 'hood river',
+            'crook', 'jefferson', 'baker', 'curry', 'morrow', 'wallowa',
+            'harney', 'lake', 'grant', 'sherman', 'gilliam', 'wheeler'
+        ];
+        
+        // Check if query contains "oregon" or "or"
+        if (q.includes('oregon') || q.includes(', or') || q.endsWith(' or')) {
+            return true;
+        }
+        
+        // Check for Oregon cities
+        for (const city of oregonCities) {
+            if (q.includes(city)) return true;
+        }
+        
+        // Check for Oregon counties
+        for (const county of oregonCounties) {
+            if (q.includes(county)) return true;
+        }
+        
+        // Check for Oregon ZIP codes (97000-97999)
+        const zipMatch = q.match(/\b(97\d{3})\b/);
+        if (zipMatch) {
+            const zip = parseInt(zipMatch[1]);
+            if (zip >= 97000 && zip <= 97999) return true;
+        }
+        
+        return false;
+    }
+    
+    // --- 3. LOCAL DATA MATRIX DECLARATIONS ---
     let map, geoJsonLayer, markerGroup;
     
     const appState = {
@@ -304,7 +368,7 @@
         }
     };
 
-    // --- 2. AUTOMATIC CORE LIFECYCLE HANDLERS ---
+    // --- 4. AUTOMATIC CORE LIFECYCLE HANDLERS ---
     document.addEventListener('DOMContentLoaded', () => {
         initializeMap();
         registerEventListeners();
@@ -325,7 +389,7 @@
         renderSpatialLayers();
     }
 
-    // --- 3. GEOGRAPHIC COMPUTATION & REVERSE QUERY CHANNELS ---
+    // --- 5. GEOGRAPHIC COMPUTATION & RENDER ---
     function renderSpatialLayers() {
         if (geoJsonLayer) { map.removeLayer(geoJsonLayer); }
         if (!document.getElementById('toggleGeoJson').checked) return;
@@ -374,9 +438,88 @@
         }
     }
     
-    // --- RENTCAST PROPERTY VALUE FETCH ---
-        // --- RENTCAST PROPERTY LISTINGS FETCH ---
-    async function fetchPropertyValue(lat, lng) {
+    // --- 6. PROPERTY SEARCH (TEST MODE + LIVE MODE) ---
+    async function performPropertySearch(query) {
+        const tractField = document.getElementById('formTract');
+        const searchError = document.getElementById('searchError');
+        
+        // Validate Oregon location
+        if (!isOregonLocation(query)) {
+            searchError.textContent = '⚠️ Only Oregon properties are supported. Please enter an Oregon address, city, or county.';
+            searchError.classList.remove('hidden');
+            return;
+        }
+        searchError.classList.add('hidden');
+        
+        tractField.value = "Geocoding location...";
+        
+        // Geocode the search query to get lat/lng
+        try {
+            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`;
+            const geocodeResponse = await fetch(geocodeUrl);
+            const geocodeData = await geocodeResponse.json();
+            
+            if (!geocodeData || geocodeData.length === 0) {
+                tractField.value = "Location not found";
+                searchError.textContent = '⚠️ Location not found. Try a different search term.';
+                searchError.classList.remove('hidden');
+                return;
+            }
+            
+            const lat = parseFloat(geocodeData[0].lat);
+            const lng = parseFloat(geocodeData[0].lon);
+            
+            // Update form fields
+            document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
+            
+            // Move map to location
+            map.setView([lat, lng], 13);
+            
+            // Place marker
+            markerGroup.clearLayers();
+            L.marker([lat, lng]).addTo(markerGroup)
+                .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + geocodeData[0].display_name + '</span>')
+                .openPopup();
+            
+            // Fetch census tract
+            await fetchCensusTractDataApi(lat, lng);
+            
+            // 🔧 TEST MODE — no API call, uses dummy data
+            if (TEST_MODE) {
+                tractField.value = "3 listings (TEST MODE)";
+                displayListingsOnMap([
+                    {
+                        price: 425000, bedrooms: 3, bathrooms: 2, squareFootage: 1650,
+                        propertyType: "Single Family", formattedAddress: "123 Main St, " + query + ", OR",
+                        latitude: lat + 0.002, longitude: lng + 0.003
+                    },
+                    {
+                        price: 375000, bedrooms: 2, bathrooms: 1, squareFootage: 1100,
+                        propertyType: "Single Family", formattedAddress: "456 Oak Ave, " + query + ", OR",
+                        latitude: lat - 0.001, longitude: lng + 0.001
+                    },
+                    {
+                        price: 550000, bedrooms: 4, bathrooms: 3, squareFootage: 2200,
+                        propertyType: "Single Family", formattedAddress: "789 Pine Rd, " + query + ", OR",
+                        latitude: lat + 0.003, longitude: lng - 0.002
+                    }
+                ]);
+                return;
+            }
+            
+            // 🔴 LIVE MODE — call RentCast API
+            await fetchPropertyListings(lat, lng);
+            
+        } catch (error) {
+            console.error('Search Error:', error);
+            tractField.value = "Search failed";
+            searchError.textContent = '⚠️ Search failed. Please try again.';
+            searchError.classList.remove('hidden');
+        }
+    }
+    
+    // --- 7. RENTCAST PROPERTY LISTINGS FETCH (LIVE MODE) ---
+    async function fetchPropertyListings(lat, lng) {
         const cacheKey = `${lat},${lng}`;
         const tractField = document.getElementById('formTract');
         
@@ -416,10 +559,7 @@
                 
                 propertyValueCache[cacheKey] = result;
                 tractField.value = data.count + " active listings";
-                
-                // Show listings on the map
                 displayListingsOnMap(data.listings);
-                
                 return result;
             } else {
                 tractField.value = "No matching listings";
@@ -433,9 +573,8 @@
         }
     }
     
-    // --- DISPLAY LISTINGS ON MAP ---
+    // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
-        // Clear previous listing markers (keep the clicked location marker)
         if (window.listingMarkers) {
             map.removeLayer(window.listingMarkers);
         }
@@ -451,6 +590,7 @@
                 const baths = listing.bathrooms || '?';
                 const sqft = listing.squareFootage ? listing.squareFootage.toLocaleString() + ' sqft' : '';
                 const address = listing.formattedAddress || listing.address || 'Address unavailable';
+                const propType = listing.propertyType || 'Residential';
                 
                 const marker = L.marker([listing.latitude, listing.longitude])
                     .bindPopup(`
@@ -458,7 +598,7 @@
                             <strong class="text-emerald-600">${price}</strong><br>
                             <span class="text-xs text-slate-600">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''}</span><br>
                             <span class="text-xs text-slate-500">${address}</span><br>
-                            <span class="text-xs text-indigo-500">${listing.propertyType || 'Residential'}</span>
+                            <span class="text-xs text-indigo-500">${propType}</span>
                         </div>
                     `);
                 
@@ -466,23 +606,36 @@
             }
         });
         
-        // Fit map to show all listing markers
         if (listings.length > 0 && window.listingMarkers.getLayers().length > 0) {
             const bounds = window.listingMarkers.getBounds();
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
         }
     }
 
-    // --- 4. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
+    // --- 9. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
     function registerEventListeners() {
         document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
-        document.getElementById('btnFetchData').addEventListener('click', () => {
-            renderSpatialLayers();
-            alert('Spatial matrix re-indexed against active node configurations.');
+        document.getElementById('btnResetApiCounter').addEventListener('click', resetApiCounter);
+        
+        // Search button — only way to trigger API calls now
+        document.getElementById('btnSearch').addEventListener('click', () => {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                document.getElementById('searchError').textContent = '⚠️ Please enter an Oregon address, city, or county.';
+                document.getElementById('searchError').classList.remove('hidden');
+                return;
+            }
+            performPropertySearch(query);
         });
         
-        document.getElementById('btnResetApiCounter').addEventListener('click', resetApiCounter);
+        // Allow Enter key to trigger search
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('btnSearch').click();
+            }
+        });
 
+        // Map click — now only captures coordinates, NO API call
         map.on('click', async (e) => {
             const lat = e.latlng.lat;
             const lng = e.latlng.lng;
@@ -491,11 +644,11 @@
             
             markerGroup.clearLayers();
             L.marker([lat, lng]).addTo(markerGroup)
-                .bindPopup('<span class="text-xs font-mono text-slate-900">Target Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>')
+                .bindPopup('<span class="text-xs font-mono text-slate-900">📍 Selected: ' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span>')
                 .openPopup();
 
             await fetchCensusTractDataApi(lat, lng);
-            await fetchPropertyValue(lat, lng);
+            // No API call here — user must use search bar for listings
         });
 
         document.getElementById('intakeForm').addEventListener('submit', (e) => {
@@ -507,7 +660,7 @@
             const tract = document.getElementById('formTract').value;
 
             if (!coords) {
-                alert("⚠️ Architecture Validation Breach: Please select a geographic node directly on the Map viewport to load tracking parameters.");
+                alert("⚠️ Please select a location on the map or search for an Oregon property first.");
                 return;
             }
 
@@ -526,11 +679,11 @@
             document.getElementById('intakeForm').reset();
             markerGroup.clearLayers();
             
-            alert("🚀 CRM Task Automation Triggered Successfully!\nLead captured for " + name + ".\nWebhooks successfully dispatched to remote repository endpoints.");
+            alert("🚀 Lead captured for " + name + "!\n\nWe'll send you active listings in this area within 24 hours.");
         });
     }
 
-    // --- 5. VISUAL GRAPHICS ENGINE TERMINALS ---
+    // --- 10. VISUAL GRAPHICS ENGINE TERMINALS ---
     function synchronizeCrmUi() {
         const tableBody = document.getElementById('crmTableBody');
         const countLabel = document.getElementById('leadCount');
