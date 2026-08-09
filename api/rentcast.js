@@ -1,23 +1,26 @@
 export default async function handler(req, res) {
-    const { lat, lng } = req.query;
+    const { city, county, state, zipCode, limit } = req.query;
     
-    if (!lat || !lng) {
-        return res.status(400).json({ error: 'Missing lat/lng parameters' });
+    // Validate at least one search parameter
+    if (!city && !county && !state && !zipCode) {
+        return res.status(400).json({ error: 'Missing search parameters. Provide city, county, state, or zipCode.' });
     }
     
     try {
-        // Build the listings endpoint with all property filters
         const params = new URLSearchParams({
-            latitude: lat,
-            longitude: lng,
-            radius: '5',                    // 5-mile search radius
-            propertyType: 'Single Family',  // Residential stick-built
-            limit: '25',                    // Max results per call
+            propertyType: 'Single Family',
+            limit: limit || '50',
             minPrice: '250000',
             maxPrice: '800000',
             bedroomsMin: '1',
-            status: 'Active'               // Only active listings
+            status: 'Active'
         });
+        
+        // Add location filters
+        if (city) params.append('city', city);
+        if (county) params.append('county', county);
+        if (state) params.append('state', state);
+        if (zipCode) params.append('zipCode', zipCode);
         
         const response = await fetch(
             `https://api.rentcast.io/v1/listings?${params.toString()}`,
@@ -29,32 +32,29 @@ export default async function handler(req, res) {
             }
         );
         
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('RentCast API Error:', response.status, errorText);
+            return res.status(response.status).json({ error: `RentCast API error: ${response.status}` });
+        }
+        
         const data = await response.json();
         
-        // Filter out commercial, multi-family (5+ units), bare land, and leased land
+        // Filter out unwanted property types
         const filtered = Array.isArray(data) ? data.filter(listing => {
             // Exclude bare land
-            if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') {
-                return false;
-            }
+            if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') return false;
             
-            // Exclude commercial
-            if (listing.propertyType === 'Commercial' || listing.propertyType === 'Industrial') {
-                return false;
-            }
+            // Exclude commercial/industrial
+            if (listing.propertyType === 'Commercial' || listing.propertyType === 'Industrial') return false;
             
-            // Exclude multi-family 5+ units (mortgage = commercial)
-            if (listing.propertyType === 'Multi-Family' && listing.units && listing.units >= 5) {
-                return false;
-            }
+            // Exclude 5+ unit multi-family (considered commercial mortgage)
+            if (listing.propertyType === 'Multi-Family' && listing.units && listing.units >= 5) return false;
             
             // Exclude manufactured/mobile homes on leased land
             if ((listing.propertyType === 'Manufactured' || listing.propertyType === 'Mobile/Manufactured') 
-                && listing.landLease === true) {
-                return false;
-            }
+                && listing.landLease === true) return false;
             
-            // Exclude condos/townhouses? Keep them — they're residential
             return true;
         }) : [];
         
@@ -62,6 +62,7 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({
             count: filtered.length,
+            searchParams: { city, county, state, zipCode },
             listings: filtered
         });
         
