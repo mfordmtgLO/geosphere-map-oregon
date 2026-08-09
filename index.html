@@ -438,83 +438,70 @@
         }
     }
     
-    // --- 6. PROPERTY SEARCH (TEST MODE + LIVE MODE) ---
-    async function performPropertySearch(query) {
+        // --- 7. RENTCAST PROPERTY LISTINGS BY LOCATION (LIVE MODE) ---
+    async function fetchPropertyListingsByLocation(searchParams) {
         const tractField = document.getElementById('formTract');
-        const searchError = document.getElementById('searchError');
         
-        // Validate Oregon location
-        if (!isOregonLocation(query)) {
-            searchError.textContent = '⚠️ Only Oregon properties are supported. Please enter an Oregon address, city, or county.';
-            searchError.classList.remove('hidden');
-            return;
+        // Create cache key from search params
+        const cacheKey = JSON.stringify(searchParams);
+        
+        if (isApiHardStopped()) {
+            tractField.value = "API LIMIT REACHED - 50/50";
+            alert('🚫 RentCast API hard stop active. Monthly limit of 50 pulls reached.\n\nUse the "Reset Monthly Counter" button when your billing cycle renews.');
+            return null;
         }
-        searchError.classList.add('hidden');
         
-        tractField.value = "Geocoding location...";
+        if (propertyValueCache[cacheKey]) {
+            tractField.value = propertyValueCache[cacheKey].count + " listings found";
+            displayListingsOnMap(propertyValueCache[cacheKey].listings);
+            return propertyValueCache[cacheKey];
+        }
         
-        // Geocode the search query to get lat/lng
         try {
-            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`;
-            const geocodeResponse = await fetch(geocodeUrl);
-            const geocodeData = await geocodeResponse.json();
+            // Build query string from search params
+            const queryString = Object.entries(searchParams)
+                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+                .join('&');
             
-            if (!geocodeData || geocodeData.length === 0) {
-                tractField.value = "Location not found";
-                searchError.textContent = '⚠️ Location not found. Try a different search term.';
-                searchError.classList.remove('hidden');
-                return;
+            const response = await fetch(`/api/rentcast?${queryString}`);
+            
+            if (!response.ok) {
+                throw new Error(`API Error: ${response.status}`);
             }
             
-            const lat = parseFloat(geocodeData[0].lat);
-            const lng = parseFloat(geocodeData[0].lon);
+            const data = await response.json();
             
-            // Update form fields
-            document.getElementById('formCoords').value = lat.toFixed(4) + ", " + lng.toFixed(4);
-            
-            // Move map to location
-            map.setView([lat, lng], 13);
-            
-            // Place marker
-            markerGroup.clearLayers();
-            L.marker([lat, lng]).addTo(markerGroup)
-                .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + geocodeData[0].display_name + '</span>')
-                .openPopup();
-            
-            // Fetch census tract
-            await fetchCensusTractDataApi(lat, lng);
-            
-            // 🔧 TEST MODE — no API call, uses dummy data
-            if (TEST_MODE) {
-                tractField.value = "3 listings (TEST MODE)";
-                displayListingsOnMap([
-                    {
-                        price: 425000, bedrooms: 3, bathrooms: 2, squareFootage: 1650,
-                        propertyType: "Single Family", formattedAddress: "123 Main St, " + query + ", OR",
-                        latitude: lat + 0.002, longitude: lng + 0.003
-                    },
-                    {
-                        price: 375000, bedrooms: 2, bathrooms: 1, squareFootage: 1100,
-                        propertyType: "Single Family", formattedAddress: "456 Oak Ave, " + query + ", OR",
-                        latitude: lat - 0.001, longitude: lng + 0.001
-                    },
-                    {
-                        price: 550000, bedrooms: 4, bathrooms: 3, squareFootage: 2200,
-                        propertyType: "Single Family", formattedAddress: "789 Pine Rd, " + query + ", OR",
-                        latitude: lat + 0.003, longitude: lng - 0.002
-                    }
-                ]);
-                return;
+            if (data && data.listings && data.listings.length > 0) {
+                const allowed = incrementApiCount();
+                if (!allowed) {
+                    tractField.value = "API LIMIT REACHED - 50/50";
+                    return null;
+                }
+                
+                const result = {
+                    count: data.count,
+                    listings: data.listings,
+                    searchParams: searchParams
+                };
+                
+                propertyValueCache[cacheKey] = result;
+                
+                // Build description of what was searched
+                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'area';
+                tractField.value = data.count + " active listings in " + locationDesc;
+                
+                displayListingsOnMap(data.listings);
+                return result;
+            } else {
+                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'this area';
+                tractField.value = "No listings in " + locationDesc;
+                return null;
             }
-            
-            // 🔴 LIVE MODE — call RentCast API
-            await fetchPropertyListings(lat, lng);
             
         } catch (error) {
-            console.error('Search Error:', error);
-            tractField.value = "Search failed";
-            searchError.textContent = '⚠️ Search failed. Please try again.';
-            searchError.classList.remove('hidden');
+            console.error('RentCast API Error:', error);
+            tractField.value = "API Error - Try Again";
+            return null;
         }
     }
     
