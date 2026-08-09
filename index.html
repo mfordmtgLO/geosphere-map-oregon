@@ -95,9 +95,7 @@
                     </button>
                     <p id="searchError" class="text-xs text-red-400 hidden mt-1"></p>
                 </div>
-                    Query Spatial Engine
-                </button>
-            </div>
+                   
             <!-- API Usage Tracker & Hard Stop Control -->
 <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-3 shadow-sm">
     <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
@@ -436,6 +434,121 @@
             trackOutputField.value = "Traversal Failed";
             return "ERROR_ID";
         }
+    }
+            // --- 6. PROPERTY SEARCH (TEST MODE + LIVE MODE) ---
+    async function performPropertySearch(query) {
+        const tractField = document.getElementById('formTract');
+        const searchError = document.getElementById('searchError');
+        
+        if (!isOregonLocation(query)) {
+            searchError.textContent = '⚠️ Only Oregon properties are supported. Please enter an Oregon address, city, or county.';
+            searchError.classList.remove('hidden');
+            return;
+        }
+        searchError.classList.add('hidden');
+        
+        const searchParams = parseSearchQuery(query);
+        
+        if (!searchParams) {
+            searchError.textContent = '⚠️ Could not determine location. Try a city name, county, or ZIP code.';
+            searchError.classList.remove('hidden');
+            return;
+        }
+        
+        tractField.value = "Searching listings...";
+        
+        try {
+            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`;
+            const geocodeResponse = await fetch(geocodeUrl);
+            const geocodeData = await geocodeResponse.json();
+            
+            let mapLat = 44.0521;
+            let mapLng = -123.0867;
+            let zoomLevel = 10;
+            
+            if (geocodeData && geocodeData.length > 0) {
+                mapLat = parseFloat(geocodeData[0].lat);
+                mapLng = parseFloat(geocodeData[0].lon);
+                
+                if (searchParams.zipCode) {
+                    zoomLevel = 14;
+                } else if (searchParams.city) {
+                    zoomLevel = 11;
+                } else if (searchParams.county) {
+                    zoomLevel = 9;
+                }
+            }
+            
+            document.getElementById('formCoords').value = mapLat.toFixed(4) + ", " + mapLng.toFixed(4);
+            map.setView([mapLat, mapLng], zoomLevel);
+            
+            markerGroup.clearLayers();
+            L.marker([mapLat, mapLng]).addTo(markerGroup)
+                .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + query + '</span>')
+                .openPopup();
+            
+            if (window.searchCircle) {
+                map.removeLayer(window.searchCircle);
+                window.searchCircle = null;
+            }
+            
+            await fetchCensusTractDataApi(mapLat, mapLng);
+            
+            if (TEST_MODE) {
+                tractField.value = "3 listings (TEST MODE)";
+                displayListingsOnMap([
+                    { price: 425000, bedrooms: 3, bathrooms: 2, squareFootage: 1650, propertyType: "Single Family", formattedAddress: "123 Main St, " + query + ", OR", latitude: mapLat + 0.005, longitude: mapLng + 0.006 },
+                    { price: 375000, bedrooms: 2, bathrooms: 1, squareFootage: 1100, propertyType: "Single Family", formattedAddress: "456 Oak Ave, " + query + ", OR", latitude: mapLat - 0.003, longitude: mapLng + 0.004 },
+                    { price: 550000, bedrooms: 4, bathrooms: 3, squareFootage: 2200, propertyType: "Single Family", formattedAddress: "789 Pine Rd, " + query + ", OR", latitude: mapLat + 0.004, longitude: mapLng - 0.005 }
+                ]);
+                return;
+            }
+            
+            await fetchPropertyListingsByLocation(searchParams);
+            
+        } catch (error) {
+            console.error('Search Error:', error);
+            tractField.value = "Search failed";
+            searchError.textContent = '⚠️ Search failed. Please try again.';
+            searchError.classList.remove('hidden');
+        }
+    }
+    
+    function parseSearchQuery(query) {
+        const q = query.toLowerCase().trim();
+        
+        const zipMatch = q.match(/\b(97\d{3})\b/);
+        if (zipMatch) {
+            return { zipCode: zipMatch[1], state: 'OR' };
+        }
+        
+        const counties = {
+            'multnomah': 'Multnomah', 'washington': 'Washington', 'clackamas': 'Clackamas',
+            'lane': 'Lane', 'marion': 'Marion', 'jackson': 'Jackson', 'deschutes': 'Deschutes',
+            'linn': 'Linn', 'yamhill': 'Yamhill', 'benton': 'Benton', 'josephine': 'Josephine',
+            'douglas': 'Douglas', 'polk': 'Polk', 'coos': 'Coos', 'columbia': 'Columbia',
+            'umatilla': 'Umatilla', 'klamath': 'Klamath', 'lincoln': 'Lincoln',
+            'malheur': 'Malheur', 'clatsop': 'Clatsop', 'union': 'Union', 'tillamook': 'Tillamook',
+            'wasco': 'Wasco', 'hood river': 'Hood River', 'crook': 'Crook', 'jefferson': 'Jefferson',
+            'baker': 'Baker', 'curry': 'Curry', 'morrow': 'Morrow', 'wallowa': 'Wallowa',
+            'harney': 'Harney', 'lake': 'Lake', 'grant': 'Grant', 'sherman': 'Sherman',
+            'gilliam': 'Gilliam', 'wheeler': 'Wheeler'
+        };
+        
+        for (const [key, value] of Object.entries(counties)) {
+            if (q.includes(key)) {
+                return { county: value, state: 'OR' };
+            }
+        }
+        
+        let cityName = q.replace(/,?\s*oregon/i, '').replace(/,?\s*or$/i, '').replace(/^\d+\s+/, '').trim();
+        cityName = cityName.replace(/\b\w/g, c => c.toUpperCase());
+        
+        if (cityName) {
+            return { city: cityName, state: 'OR' };
+        }
+        
+        return null;
     }
         // --- 7. RENTCAST PROPERTY LISTINGS BY LOCATION (LIVE MODE) ---
     async function fetchPropertyListingsByLocation(searchParams) {
