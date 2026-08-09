@@ -375,59 +375,54 @@
     }
     
     // --- RENTCAST PROPERTY VALUE FETCH ---
+        // --- RENTCAST PROPERTY LISTINGS FETCH ---
     async function fetchPropertyValue(lat, lng) {
         const cacheKey = `${lat},${lng}`;
         const tractField = document.getElementById('formTract');
         
-        // HARD STOP CHECK
         if (isApiHardStopped()) {
             tractField.value = "API LIMIT REACHED - 50/50";
             alert('🚫 RentCast API hard stop active. Monthly limit of 50 pulls reached.\n\nUse the "Reset Monthly Counter" button when your billing cycle renews.');
             return null;
         }
         
-        // Check cache
         if (propertyValueCache[cacheKey]) {
-            tractField.value = "Value: " + propertyValueCache[cacheKey].formatted;
+            tractField.value = propertyValueCache[cacheKey].count + " listings found";
+            displayListingsOnMap(propertyValueCache[cacheKey].listings);
             return propertyValueCache[cacheKey];
         }
         
-               try {
-            // Calls Vercel serverless function — API key stays hidden on the server
+        try {
+            tractField.value = "Searching listings...";
             const response = await fetch(`/api/rentcast?lat=${lat}&lng=${lng}`);
             
             if (!response.ok) {
                 throw new Error(`API Error: ${response.status}`);
             }
             
-            // SUCCESS — increment the counter
-            const allowed = incrementApiCount();
-            if (!allowed) {
-                tractField.value = "API LIMIT REACHED - 50/50";
-                return null;
-            }
-            
             const data = await response.json();
             
-            if (data && data.estimate) {
-                const formattedValue = new Intl.NumberFormat('en-US', {
-                    style: 'currency',
-                    currency: 'USD',
-                    maximumFractionDigits: 0
-                }).format(data.estimate);
+            if (data && data.listings && data.listings.length > 0) {
+                const allowed = incrementApiCount();
+                if (!allowed) {
+                    tractField.value = "API LIMIT REACHED - 50/50";
+                    return null;
+                }
                 
                 const result = {
-                    raw: data.estimate,
-                    formatted: formattedValue,
-                    rangeLow: data.rangeLow,
-                    rangeHigh: data.rangeHigh
+                    count: data.count,
+                    listings: data.listings
                 };
                 
                 propertyValueCache[cacheKey] = result;
-                tractField.value = "Value: " + formattedValue;
+                tractField.value = data.count + " active listings";
+                
+                // Show listings on the map
+                displayListingsOnMap(data.listings);
+                
                 return result;
             } else {
-                tractField.value = "No valuation data";
+                tractField.value = "No matching listings";
                 return null;
             }
             
@@ -435,6 +430,46 @@
             console.error('RentCast API Error:', error);
             tractField.value = "API Error - Try Again";
             return null;
+        }
+    }
+    
+    // --- DISPLAY LISTINGS ON MAP ---
+    function displayListingsOnMap(listings) {
+        // Clear previous listing markers (keep the clicked location marker)
+        if (window.listingMarkers) {
+            map.removeLayer(window.listingMarkers);
+        }
+        window.listingMarkers = L.layerGroup().addTo(map);
+        
+        listings.forEach(listing => {
+            if (listing.latitude && listing.longitude) {
+                const price = listing.price 
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(listing.price)
+                    : 'N/A';
+                
+                const beds = listing.bedrooms || '?';
+                const baths = listing.bathrooms || '?';
+                const sqft = listing.squareFootage ? listing.squareFootage.toLocaleString() + ' sqft' : '';
+                const address = listing.formattedAddress || listing.address || 'Address unavailable';
+                
+                const marker = L.marker([listing.latitude, listing.longitude])
+                    .bindPopup(`
+                        <div class="text-sm font-sans" style="min-width: 200px;">
+                            <strong class="text-emerald-600">${price}</strong><br>
+                            <span class="text-xs text-slate-600">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''}</span><br>
+                            <span class="text-xs text-slate-500">${address}</span><br>
+                            <span class="text-xs text-indigo-500">${listing.propertyType || 'Residential'}</span>
+                        </div>
+                    `);
+                
+                window.listingMarkers.addLayer(marker);
+            }
+        });
+        
+        // Fit map to show all listing markers
+        if (listings.length > 0 && window.listingMarkers.getLayers().length > 0) {
+            const bounds = window.listingMarkers.getBounds();
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
         }
     }
 
