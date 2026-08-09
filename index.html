@@ -617,16 +617,7 @@
         }
     }
     
-    // --- 7. RENTCAST PROPERTY LISTINGS FETCH (LIVE MODE) ---
-    async function fetchPropertyListings(lat, lng) {
-        const cacheKey = `${lat},${lng}`;
-        const tractField = document.getElementById('formTract');
-        
-        if (isApiHardStopped()) {
-            tractField.value = "API LIMIT REACHED - 50/50";
-            alert('🚫 RentCast API hard stop active. Monthly limit of 50 pulls reached.\n\nUse the "Reset Monthly Counter" button when your billing cycle renews.');
-            return null;
-        }
+    
         
         if (propertyValueCache[cacheKey]) {
             tractField.value = propertyValueCache[cacheKey].count + " listings found";
