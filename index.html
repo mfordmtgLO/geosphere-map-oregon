@@ -89,6 +89,49 @@
                     Query Spatial Engine
                 </button>
             </div>
+            <!-- API Usage Tracker & Hard Stop Control -->
+<div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-3 shadow-sm">
+    <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">RentCast API Usage</h2>
+    </div>
+    
+    <!-- Counter Display -->
+    <div class="flex items-center justify-between">
+        <span class="text-xs text-slate-400">Property Value Pulls</span>
+        <span class="text-sm font-mono font-bold" id="apiCounterColor">0</span>
+        <span class="text-xs text-slate-500">/ 50</span>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="w-full bg-slate-800 rounded-full h-2">
+        <div id="apiProgressBar" class="h-2 rounded-full transition-all duration-300" 
+             style="width: 0%; background: #22c55e;"></div>
+    </div>
+    
+    <!-- Status Message -->
+    <p id="apiStatus" class="text-xs text-slate-500 text-center">
+        Ready for property lookups
+    </p>
+    
+    <!-- Hard Stop Warning -->
+    <div id="apiHardStopWarning" class="hidden rounded-lg bg-red-500/10 border border-red-500/20 p-2 text-center">
+        <p class="text-xs text-red-400 font-semibold">🛑 HARD STOP ACTIVE</p>
+        <p class="text-xs text-red-400/70">50/50 pulls reached. API blocked.</p>
+    </div>
+    
+    <!-- Reset Button -->
+    <button id="btnResetApiCounter" 
+            class="w-full rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition">
+        🔄 Reset Monthly Counter (Admin)
+    </button>
+    
+    <p class="text-xs text-slate-600 text-center italic">
+        Resets counter to 0. Use on billing cycle date.
+    </p>
+</div>
 
             <!-- CRM Client Intake Capture Processing Box -->
             <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
