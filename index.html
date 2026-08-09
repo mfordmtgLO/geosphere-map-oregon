@@ -563,59 +563,7 @@
             return null;
         }
         
-        if (propertyValueCache[cacheKey]) {
-            tractField.value = propertyValueCache[cacheKey].count + " listings found";
-            displayListingsOnMap(propertyValueCache[cacheKey].listings);
-            return propertyValueCache[cacheKey];
-        }
-        
-        try {
-            // Build query string from search params
-            const queryString = Object.entries(searchParams)
-                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
-                .join('&');
-            
-            const response = await fetch(`/api/rentcast?${queryString}`);
-            
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data && data.listings && data.listings.length > 0) {
-                const allowed = incrementApiCount();
-                if (!allowed) {
-                    tractField.value = "API LIMIT REACHED - 50/50";
-                    return null;
-                }
-                
-                const result = {
-                    count: data.count,
-                    listings: data.listings,
-                    searchParams: searchParams
-                };
-                
-                propertyValueCache[cacheKey] = result;
-                
-                // Build description of what was searched
-                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'area';
-                tractField.value = data.count + " active listings in " + locationDesc;
-                
-                displayListingsOnMap(data.listings);
-                return result;
-            } else {
-                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'this area';
-                tractField.value = "No listings in " + locationDesc;
-                return null;
-            }
-            
-        } catch (error) {
-            console.error('RentCast API Error:', error);
-            tractField.value = "API Error - Try Again";
-            return null;
-        }
-    }
+       
     
     
         
