@@ -734,11 +734,16 @@ function setCachedResults(cacheKey, data) {
             }
         });
         
-        if (listings.length > 0 && window.listingMarkers.getLayers().length > 0) {
-            const bounds = window.listingMarkers.getBounds();
-            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                try {
+            if (listings.length > 0 && window.listingMarkers && window.listingMarkers.getLayers() && window.listingMarkers.getLayers().length > 0) {
+                const bounds = window.listingMarkers.getBounds();
+                if (bounds && bounds.isValid()) {
+                    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
+                }
+            }
+        } catch (e) {
+            console.warn('Could not fit map to bounds:', e.message);
         }
-    }
 
     // --- 9. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
     function registerEventListeners() {
