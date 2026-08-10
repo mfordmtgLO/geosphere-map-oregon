@@ -514,7 +514,7 @@
         }
     }
     
-    function parseSearchQuery(query) {
+        function parseSearchQuery(query) {
         const q = query.toLowerCase().trim();
         
         const zipMatch = q.match(/\b(97\d{3})\b/);
@@ -522,17 +522,27 @@
             return { zipCode: zipMatch[1], state: 'OR' };
         }
         
+        // Check for county names — but only if the query is JUST the county name
+        // or contains "county" to avoid false matches like "Coos Bay" matching "Coos"
         const counties = {
-            'multnomah': 'Multnomah', 'washington': 'Washington', 'clackamas': 'Clackamas',
-            'lane': 'Lane', 'marion': 'Marion', 'jackson': 'Jackson', 'deschutes': 'Deschutes',
-            'linn': 'Linn', 'yamhill': 'Yamhill', 'benton': 'Benton', 'josephine': 'Josephine',
-            'douglas': 'Douglas', 'polk': 'Polk', 'coos': 'Coos', 'columbia': 'Columbia',
-            'umatilla': 'Umatilla', 'klamath': 'Klamath', 'lincoln': 'Lincoln',
-            'malheur': 'Malheur', 'clatsop': 'Clatsop', 'union': 'Union', 'tillamook': 'Tillamook',
-            'wasco': 'Wasco', 'hood river': 'Hood River', 'crook': 'Crook', 'jefferson': 'Jefferson',
-            'baker': 'Baker', 'curry': 'Curry', 'morrow': 'Morrow', 'wallowa': 'Wallowa',
-            'harney': 'Harney', 'lake': 'Lake', 'grant': 'Grant', 'sherman': 'Sherman',
-            'gilliam': 'Gilliam', 'wheeler': 'Wheeler'
+            'multnomah county': 'Multnomah', 'washington county': 'Washington', 
+            'clackamas county': 'Clackamas', 'lane county': 'Lane', 
+            'marion county': 'Marion', 'jackson county': 'Jackson', 
+            'deschutes county': 'Deschutes', 'linn county': 'Linn', 
+            'yamhill county': 'Yamhill', 'benton county': 'Benton', 
+            'josephine county': 'Josephine', 'douglas county': 'Douglas', 
+            'polk county': 'Polk', 'coos county': 'Coos', 
+            'columbia county': 'Columbia', 'umatilla county': 'Umatilla', 
+            'klamath county': 'Klamath', 'lincoln county': 'Lincoln',
+            'malheur county': 'Malheur', 'clatsop county': 'Clatsop', 
+            'union county': 'Union', 'tillamook county': 'Tillamook',
+            'wasco county': 'Wasco', 'hood river county': 'Hood River', 
+            'crook county': 'Crook', 'jefferson county': 'Jefferson',
+            'baker county': 'Baker', 'curry county': 'Curry', 
+            'morrow county': 'Morrow', 'wallowa county': 'Wallowa',
+            'harney county': 'Harney', 'lake county': 'Lake', 
+            'grant county': 'Grant', 'sherman county': 'Sherman',
+            'gilliam county': 'Gilliam', 'wheeler county': 'Wheeler'
         };
         
         for (const [key, value] of Object.entries(counties)) {
@@ -541,7 +551,13 @@
             }
         }
         
-        let cityName = q.replace(/,?\s*oregon/i, '').replace(/,?\s*or$/i, '').replace(/^\d+\s+/, '').trim();
+        let cityName = q
+            .replace(/,?\s*oregon/i, '')
+            .replace(/,?\s*or\b/i, '')
+            .replace(/^\d+\s+/, '')
+            .replace(/,/g, '')
+            .trim();
+        
         cityName = cityName.replace(/\b\w/g, c => c.toUpperCase());
         
         if (cityName) {
