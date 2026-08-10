@@ -85,10 +85,22 @@
                     </div>
                 </div>
 
-                                              <!-- Property Search -->
+                                                              <!-- Property Search -->
                 <div class="space-y-2 pt-2 border-t border-slate-800">
                     <label class="block text-sm font-semibold text-slate-200">Property Listings</label>
-                                        <input type="text" id="searchInput" placeholder="e.g., address, city, county" 
+                    
+                    <!-- Search Mode Toggle -->
+                    <div class="flex items-center space-x-2 bg-slate-800/50 rounded-lg p-1">
+                        <button id="btnModeOffline" class="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition bg-slate-950 text-slate-200 shadow-sm">
+                            📂 Saved Listings
+                        </button>
+                        <button id="btnModeLive" class="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition text-slate-400 hover:text-slate-200">
+                            🔄 Live Pull
+                        </button>
+                    </div>
+                    <p id="searchModeLabel" class="text-xs text-slate-500 text-center">Viewing previously cached listings only</p>
+                    
+                    <input type="text" id="searchInput" placeholder="e.g., address, city, county" 
                            class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500">
                     <button id="btnSearch" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700">
                         🔍 Search Listings
