@@ -3,7 +3,7 @@ export default async function handler(req, res) {
     const { city, county, state, zipCode, limit } = req.query;
     
     if (!city && !county && !state && !zipCode) {
-        return res.status(400).json({ error: 'Missing search parameters. Provide city, county, state, or zipCode.' });
+        return res.status(400).json({ error: 'Missing search parameters.' });
     }
     
     try {
@@ -16,15 +16,13 @@ export default async function handler(req, res) {
             status: 'Active'
         });
         
-        // RentCast uses 'address' parameter, not separate city/state/county
+        // Build address string — RentCast only uses 'address'
         if (city && state) {
             params.append('address', `${city}, ${state}`);
         } else if (county && state) {
             params.append('address', `${county} County, ${state}`);
         } else if (zipCode) {
             params.append('address', zipCode);
-        } else if (state) {
-            params.append('address', state);
         }
         
         const url = `https://api.rentcast.io/v1/listings?${params.toString()}`;
@@ -39,7 +37,6 @@ export default async function handler(req, res) {
         
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('RentCast API Error:', response.status, errorText);
             return res.status(response.status).json({ 
                 error: `RentCast API error: ${response.status}`,
                 details: errorText
@@ -61,12 +58,10 @@ export default async function handler(req, res) {
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({
             count: filtered.length,
-            searchParams: { city, county, state, zipCode },
             listings: filtered
         });
         
     } catch (error) {
-        console.error('RentCast Listings Error:', error);
         return res.status(500).json({ error: 'Failed to fetch property listings' });
     }
 }
