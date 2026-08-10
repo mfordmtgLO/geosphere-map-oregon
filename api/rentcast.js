@@ -1,4 +1,4 @@
-// RENTCAST PROXY V5 - ADDRESS PARAMETER
+// RENTCAST PROXY V6 - CORRECT ENDPOINT /listings/sale
 export default async function handler(req, res) {
     const { city, county, state, zipCode, limit } = req.query;
     
@@ -8,7 +8,6 @@ export default async function handler(req, res) {
     
     try {
         const params = new URLSearchParams({
-            propertyType: 'Single Family',
             limit: limit || '50',
             minPrice: '250000',
             maxPrice: '800000',
@@ -16,16 +15,14 @@ export default async function handler(req, res) {
             status: 'Active'
         });
         
-        // CRITICAL: RentCast uses 'address', NOT 'city'/'state'/'county'
-        if (city && state) {
-            params.append('address', `${city}, ${state}`);
-        } else if (county && state) {
-            params.append('address', `${county} County, ${state}`);
-        } else if (zipCode) {
-            params.append('address', zipCode);
-        }
+        // Use city, state, zipCode as RentCast docs specify
+        if (city) params.append('city', city);
+        if (county) params.append('county', county);
+        if (state) params.append('state', state);
+        if (zipCode) params.append('zipCode', zipCode);
         
-        const url = `https://api.rentcast.io/v1/listings?${params.toString()}`;
+        // CORRECT ENDPOINT: /listings/sale (not /listings)
+        const url = `https://api.rentcast.io/v1/listings/sale?${params.toString()}`;
         console.log('Fetching:', url);
         
         const response = await fetch(url, {
