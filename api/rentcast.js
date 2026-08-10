@@ -1,4 +1,4 @@
-// RENTCAST PROXY V7 - BROADER FILTERS
+// RENTCAST PROXY V8 - PAGINATED RESULTS
 export default async function handler(req, res) {
     const { city, county, state, zipCode, limit } = req.query;
     
@@ -7,40 +7,62 @@ export default async function handler(req, res) {
     }
     
     try {
-        const params = new URLSearchParams({
-            limit: limit || '50',
-            status: 'Active'
+        const baseParams = new URLSearchParams({
+            limit: '50',
+            status: 'Active',
+            minPrice: '250000',
+            maxPrice: '800000'
         });
         
-        if (city) params.append('city', city);
-        if (county) params.append('county', county);
-        if (state) params.append('state', state);
-        if (zipCode) params.append('zipCode', zipCode);
+        if (city) baseParams.append('city', city);
+        if (county) baseParams.append('county', county);
+        if (state) baseParams.append('state', state);
+        if (zipCode) baseParams.append('zipCode', zipCode);
         
-        const url = `https://api.rentcast.io/v1/listings/sale?${params.toString()}`;
-        console.log('Fetching:', url);
+        let allListings = [];
+        let offset = 0;
+        let hasMore = true;
+        const maxPages = 10; // Fetch up to 500 results (10 pages x 50)
         
-        const response = await fetch(url, {
-            headers: {
-                'X-API-Key': process.env.RENTCAST_API_KEY,
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('RentCast error:', response.status, errorText);
-            return res.status(response.status).json({ 
-                error: `RentCast API error: ${response.status}`,
-                details: errorText.substring(0, 200)
+        while (hasMore && offset < maxPages * 50) {
+            const params = new URLSearchParams(baseParams.toString());
+            params.append('offset', offset.toString());
+            
+            const url = `https://api.rentcast.io/v1/listings/sale?${params.toString()}`;
+            console.log(`Fetching page ${offset / 50 + 1}:`, url);
+            
+            const response = await fetch(url, {
+                headers: {
+                    'X-API-Key': process.env.RENTCAST_API_KEY,
+                    'Accept': 'application/json'
+                }
             });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('RentCast error:', response.status);
+                break;
+            }
+            
+            const data = await response.json();
+            
+            if (!Array.isArray(data) || data.length === 0) {
+                hasMore = false;
+            } else {
+                allListings = allListings.concat(data);
+                offset += 50;
+                
+                // If we got fewer than 50, we've reached the end
+                if (data.length < 50) hasMore = false;
+            }
         }
         
-        const data = await response.json();
+        console.log(`Total fetched: ${allListings.length} listings`);
         
-        const filtered = Array.isArray(data) ? data.filter(listing => {
-            // Price filter
-            if (listing.price < 250000 || listing.price > 800000) return false;
+        // Client-side filter
+        const filtered = allListings.filter(listing => {
+            // Price check
+            if (!listing.price || listing.price < 250000 || listing.price > 800000) return false;
             
             // Exclude bare land
             if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') return false;
@@ -55,13 +77,17 @@ export default async function handler(req, res) {
             if ((listing.propertyType === 'Manufactured' || listing.propertyType === 'Mobile/Manufactured') 
                 && listing.landLease === true) return false;
             
+            // Exclude 0 bedroom listings
+            if (listing.bedrooms === 0) return false;
+            
             return true;
-        }) : [];
+        });
         
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({
             count: filtered.length,
+            totalFetched: allListings.length,
             listings: filtered
         });
         
