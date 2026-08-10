@@ -1,4 +1,4 @@
-// Vercel serverless function - RentCast API proxy v3
+// RENTCAST PROXY V5 - ADDRESS PARAMETER
 export default async function handler(req, res) {
     const { city, county, state, zipCode, limit } = req.query;
     
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
             status: 'Active'
         });
         
-        // Build address string — RentCast only uses 'address'
+        // CRITICAL: RentCast uses 'address', NOT 'city'/'state'/'county'
         if (city && state) {
             params.append('address', `${city}, ${state}`);
         } else if (county && state) {
@@ -37,9 +37,10 @@ export default async function handler(req, res) {
         
         if (!response.ok) {
             const errorText = await response.text();
+            console.error('RentCast error:', response.status, errorText);
             return res.status(response.status).json({ 
                 error: `RentCast API error: ${response.status}`,
-                details: errorText
+                details: errorText.substring(0, 200)
             });
         }
         
@@ -62,6 +63,7 @@ export default async function handler(req, res) {
         });
         
     } catch (error) {
+        console.error('Function error:', error.message);
         return res.status(500).json({ error: 'Failed to fetch property listings' });
     }
 }
