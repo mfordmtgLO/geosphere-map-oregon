@@ -646,7 +646,9 @@ function setCachedResults(cacheKey, data) {
                     searchParams: searchParams
                 };
                 
-                                setCachedResults(cacheKey, result);
+                                                console.log('Caching result with key:', cacheKey);
+                setCachedResults(cacheKey, result);
+                setCachedResults(cacheKey, result);
                 
                 const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'area';
                 tractField.value = data.count + " active listings in " + locationDesc;
