@@ -605,6 +605,7 @@ function setCachedResults(cacheKey, data) {
         const tractField = document.getElementById('formTract');
         
         const cacheKey = (searchParams.city || '') + '|' + (searchParams.county || '') + '|' + (searchParams.zipCode || '') + '|' + (searchParams.state || '');
+                console.log('Cache key:', cacheKey);
         
         if (isApiHardStopped()) {
             tractField.value = "API LIMIT REACHED - 50/50";
