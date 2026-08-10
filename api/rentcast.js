@@ -1,6 +1,6 @@
-// RENTCAST PROXY V8 - PAGINATED RESULTS
+// RENTCAST PROXY V9 - MAX RESULTS
 export default async function handler(req, res) {
-    const { city, county, state, zipCode, limit } = req.query;
+    const { city, county, state, zipCode } = req.query;
     
     if (!city && !county && !state && !zipCode) {
         return res.status(400).json({ error: 'Missing search parameters.' });
@@ -9,9 +9,8 @@ export default async function handler(req, res) {
     try {
         const baseParams = new URLSearchParams({
             limit: '50',
-            status: 'Active',
-            minPrice: '250000',
-            maxPrice: '800000'
+            status: 'Active'
+            // No minPrice/maxPrice here — we filter client-side for accuracy
         });
         
         if (city) baseParams.append('city', city);
@@ -22,14 +21,14 @@ export default async function handler(req, res) {
         let allListings = [];
         let offset = 0;
         let hasMore = true;
-        const maxPages = 10; // Fetch up to 500 results (10 pages x 50)
+        const maxPages = 10; // 500 results max per RentCast docs
         
         while (hasMore && offset < maxPages * 50) {
             const params = new URLSearchParams(baseParams.toString());
             params.append('offset', offset.toString());
             
             const url = `https://api.rentcast.io/v1/listings/sale?${params.toString()}`;
-            console.log(`Fetching page ${offset / 50 + 1}:`, url);
+            console.log(`Fetching page ${offset / 50 + 1}...`);
             
             const response = await fetch(url, {
                 headers: {
@@ -39,7 +38,6 @@ export default async function handler(req, res) {
             });
             
             if (!response.ok) {
-                const errorText = await response.text();
                 console.error('RentCast error:', response.status);
                 break;
             }
@@ -51,37 +49,35 @@ export default async function handler(req, res) {
             } else {
                 allListings = allListings.concat(data);
                 offset += 50;
-                
-                // If we got fewer than 50, we've reached the end
                 if (data.length < 50) hasMore = false;
             }
         }
         
-        console.log(`Total fetched: ${allListings.length} listings`);
+        console.log(`Raw fetched: ${allListings.length}`);
         
-        // Client-side filter
+        // Precise client-side filter matching your Zillow settings
         const filtered = allListings.filter(listing => {
-            // Price check
+            // Price: $250K-$800K
             if (!listing.price || listing.price < 250000 || listing.price > 800000) return false;
             
-            // Exclude bare land
+            // Exclude: Land, Lots
             if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') return false;
             
-            // Exclude commercial/industrial
+            // Exclude: Commercial, Industrial
             if (listing.propertyType === 'Commercial' || listing.propertyType === 'Industrial') return false;
             
-            // Exclude 5+ unit multi-family
-            if (listing.propertyType === 'Multi-Family' && listing.units && listing.units >= 5) return false;
+            // Exclude: Multi-Family (any units — matching your Zillow filter "no multi-family")
+            if (listing.propertyType === 'Multi-Family') return false;
             
-            // Exclude manufactured on leased land
+            // Exclude: Manufactured on leased land only
             if ((listing.propertyType === 'Manufactured' || listing.propertyType === 'Mobile/Manufactured') 
                 && listing.landLease === true) return false;
             
-            // Exclude 0 bedroom listings
-            if (listing.bedrooms === 0) return false;
-            
+            // Include: Single Family, Condo, Townhouse, Manufactured (not on leased land)
             return true;
         });
+        
+        console.log(`After filter: ${filtered.length}`);
         
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
