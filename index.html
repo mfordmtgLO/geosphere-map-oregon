@@ -631,7 +631,7 @@
         }
     }
     
-    // --- 8. DISPLAY LISTINGS ON MAP ---
+        // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
         if (window.listingMarkers) {
             map.removeLayer(window.listingMarkers);
@@ -649,16 +649,48 @@
                 const sqft = listing.squareFootage ? listing.squareFootage.toLocaleString() + ' sqft' : '';
                 const address = listing.formattedAddress || listing.address || 'Address unavailable';
                 const propType = listing.propertyType || 'Residential';
+                const yearBuilt = listing.yearBuilt || 'N/A';
+                const daysOnMarket = listing.daysOnMarket || 'N/A';
+                const mls = listing.mlsNumber || '';
+                const mlsName = listing.mlsName || '';
+                
+                // Listing agent info
+                const agent = listing.listingAgent || {};
+                const agentName = agent.name || 'N/A';
+                const agentPhone = agent.phone || '';
+                const agentEmail = agent.email || '';
+                const agentWebsite = agent.website || '';
+                
+                // Build Zillow link
+                const zillowAddress = encodeURIComponent(address);
+                const zillowUrl = `https://www.zillow.com/homes/${zillowAddress}_rb/`;
                 
                 const marker = L.marker([listing.latitude, listing.longitude])
                     .bindPopup(`
-                        <div class="text-sm font-sans" style="min-width: 200px;">
-                            <strong class="text-emerald-600">${price}</strong><br>
-                            <span class="text-xs text-slate-600">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''}</span><br>
+                        <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px;">
+                            <strong class="text-emerald-600 text-base">${price}</strong><br>
+                            <span class="text-xs text-slate-400">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
+                            <span class="text-xs text-slate-400">Days on Market: <strong>${daysOnMarket}</strong></span><br>
                             <span class="text-xs text-slate-500">${address}</span><br>
                             <span class="text-xs text-indigo-500">${propType}</span>
+                            ${mls ? `<br><span class="text-xs text-slate-500">MLS#: <span class="font-mono text-amber-400">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
+                            
+                            <div class="border-t border-slate-700 mt-2 pt-2">
+                                <span class="text-xs font-semibold text-slate-300">Listing Agent</span><br>
+                                <span class="text-xs text-slate-400">${agentName}</span>
+                                ${agentPhone ? `<br><span class="text-xs text-slate-400">📞 <a href="tel:${agentPhone}" class="text-indigo-400 hover:underline">${agentPhone}</a></span>` : ''}
+                                ${agentEmail ? `<br><span class="text-xs text-slate-400">✉️ <a href="mailto:${agentEmail}" class="text-indigo-400 hover:underline">${agentEmail}</a></span>` : ''}
+                                ${agentWebsite ? `<br><span class="text-xs text-slate-400">🌐 <a href="${agentWebsite}" target="_blank" class="text-indigo-400 hover:underline">Website</a></span>` : ''}
+                            </div>
+                            
+                            <div class="mt-2">
+                                <a href="${zillowUrl}" target="_blank" 
+                                   class="inline-block w-full text-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 transition">
+                                    🏠 View on Zillow
+                                </a>
+                            </div>
                         </div>
-                    `);
+                    `, { maxWidth: 350 });
                 
                 window.listingMarkers.addLayer(marker);
             }
