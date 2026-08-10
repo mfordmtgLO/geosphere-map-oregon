@@ -550,11 +550,10 @@
         
         return null;
     }
-        // --- 7. RENTCAST PROPERTY LISTINGS BY LOCATION (LIVE MODE) ---
+            // --- 7. RENTCAST PROPERTY LISTINGS BY LOCATION (LIVE MODE) ---
     async function fetchPropertyListingsByLocation(searchParams) {
         const tractField = document.getElementById('formTract');
         
-        // Create cache key from search params
         const cacheKey = JSON.stringify(searchParams);
         
         if (isApiHardStopped()) {
@@ -563,10 +562,6 @@
             return null;
         }
         
-       
-    
-    
-        
         if (propertyValueCache[cacheKey]) {
             tractField.value = propertyValueCache[cacheKey].count + " listings found";
             displayListingsOnMap(propertyValueCache[cacheKey].listings);
@@ -574,8 +569,12 @@
         }
         
         try {
+            const queryString = Object.entries(searchParams)
+                .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+                .join('&');
+            
             tractField.value = "Searching listings...";
-            const response = await fetch(`/api/rentcast?lat=${lat}&lng=${lng}`);
+            const response = await fetch(`/api/rentcast?${queryString}`);
             
             if (!response.ok) {
                 throw new Error(`API Error: ${response.status}`);
@@ -592,15 +591,20 @@
                 
                 const result = {
                     count: data.count,
-                    listings: data.listings
+                    listings: data.listings,
+                    searchParams: searchParams
                 };
                 
                 propertyValueCache[cacheKey] = result;
-                tractField.value = data.count + " active listings";
+                
+                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'area';
+                tractField.value = data.count + " active listings in " + locationDesc;
+                
                 displayListingsOnMap(data.listings);
                 return result;
             } else {
-                tractField.value = "No matching listings";
+                const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'this area';
+                tractField.value = "No listings in " + locationDesc;
                 return null;
             }
             
