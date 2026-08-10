@@ -221,7 +221,36 @@
     // 🔧 TEST MODE: Set to true to test without using API pulls
     const TEST_MODE = false;
     
-    let propertyValueCache = {};
+    // Persistent 30-day cache using localStorage
+const CACHE_KEY_PREFIX = 'rentcast_cache_';
+const CACHE_DURATION_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+function getCachedResults(cacheKey) {
+    try {
+        const raw = localStorage.getItem(CACHE_KEY_PREFIX + cacheKey);
+        if (!raw) return null;
+        const entry = JSON.parse(raw);
+        if (Date.now() - entry.timestamp > CACHE_DURATION_MS) {
+            localStorage.removeItem(CACHE_KEY_PREFIX + cacheKey);
+            return null;
+        }
+        return entry.data;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setCachedResults(cacheKey, data) {
+    try {
+        const entry = {
+            data: data,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY_PREFIX + cacheKey, JSON.stringify(entry));
+    } catch (e) {
+        // localStorage full — ignore
+    }
+}
     
     // --- 1. API HARD STOP SYSTEM ---
     function getApiCount() {
@@ -244,11 +273,16 @@
         return getApiCount() >= MAX_PULLS;
     }
     
-    function resetApiCounter() {
-        if (confirm('Reset RentCast API counter to 0? Only do this when your billing cycle renews.')) {
+        function resetApiCounter() {
+        if (confirm('Reset RentCast API counter to 0? Only do this when your billing cycle renews.\n\nThis will also clear all cached search results.')) {
             setApiCount(0);
-            propertyValueCache = {};
-            alert('✅ API counter reset. Pulls available: ' + MAX_PULLS);
+            // Clear all cached listing results
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith(CACHE_KEY_PREFIX)) {
+                    localStorage.removeItem(key);
+                }
+            });
+            alert('✅ API counter and cache reset. Pulls available: ' + MAX_PULLS);
         }
     }
     
@@ -578,10 +612,11 @@
             return null;
         }
         
-        if (propertyValueCache[cacheKey]) {
-            tractField.value = propertyValueCache[cacheKey].count + " listings found";
-            displayListingsOnMap(propertyValueCache[cacheKey].listings);
-            return propertyValueCache[cacheKey];
+                const cached = getCachedResults(cacheKey);
+        if (cached) {
+            tractField.value = cached.count + " listings (cached)";
+            displayListingsOnMap(cached.listings);
+            return cached;
         }
         
         try {
@@ -611,7 +646,7 @@
                     searchParams: searchParams
                 };
                 
-                propertyValueCache[cacheKey] = result;
+                                setCachedResults(cacheKey, result);
                 
                 const locationDesc = searchParams.city || searchParams.county || searchParams.zipCode || 'area';
                 tractField.value = data.count + " active listings in " + locationDesc;
