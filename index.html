@@ -743,7 +743,7 @@ function setCachedResults(cacheKey, data) {
         } catch (e) {
             console.warn('Could not fit map to bounds:', e.message);
         }
-
+    }
     // --- 9. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
     function registerEventListeners() {
         document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
