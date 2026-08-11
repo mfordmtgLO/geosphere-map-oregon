@@ -823,27 +823,27 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
                     popupAnchor: [0, -55]
                 });
                 
-                const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
+                                const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
                     .bindPopup(`
                         <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px;">
-                            <strong class="text-emerald-600 text-base">${price}</strong><br>
-                            <span class="text-xs text-slate-400">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
-                            <span class="text-xs text-slate-400">Days on Market: <strong>${daysOnMarket}</strong></span><br>
-                            <span class="text-xs text-slate-500">${address}</span><br>
-                            <span class="text-xs text-indigo-500">${propType}</span>
-                            ${mls ? `<br><span class="text-xs text-slate-500">MLS#: <span class="font-mono text-amber-400">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
+                            <strong class="text-emerald-600 text-base" style="font-weight: 700;">${price}</strong><br>
+                            <span class="text-xs text-slate-300" style="font-weight: 600;">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
+                            <span class="text-xs text-slate-300" style="font-weight: 600;">Days on Market: <strong style="font-weight: 700;">${daysOnMarket}</strong></span><br>
+                            <span class="text-xs text-slate-200" style="font-weight: 600;">${address}</span><br>
+                            <span class="text-xs text-indigo-400" style="font-weight: 600;">${propType}</span>
+                            ${mls ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">MLS#: <span class="font-mono text-amber-400" style="font-weight: 700;">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
                             
                             <div class="border-t border-slate-700 mt-2 pt-2">
-                                <span class="text-xs font-semibold text-slate-300">Listing Agent</span><br>
-                                <span class="text-xs text-slate-400">${agentName}</span>
-                                ${agentPhone ? `<br><span class="text-xs text-slate-400">📞 <a href="tel:${agentPhone}" class="text-indigo-400 hover:underline">${agentPhone}</a></span>` : ''}
-                                ${agentEmail ? `<br><span class="text-xs text-slate-400">✉️ <a href="mailto:${agentEmail}" class="text-indigo-400 hover:underline">${agentEmail}</a></span>` : ''}
-                                ${agentWebsite ? `<br><span class="text-xs text-slate-400">🌐 <a href="${agentWebsite}" target="_blank" class="text-indigo-400 hover:underline">Website</a></span>` : ''}
+                                <span class="text-xs text-slate-200" style="font-weight: 700;">Listing Agent</span><br>
+                                <span class="text-xs text-slate-300" style="font-weight: 600;">${agentName}</span>
+                                ${agentPhone ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">📞 <a href="tel:${agentPhone}" class="text-indigo-400 hover:underline" style="font-weight: 700;">${agentPhone}</a></span>` : ''}
+                                ${agentEmail ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">✉️ <a href="mailto:${agentEmail}" class="text-indigo-400 hover:underline" style="font-weight: 700;">${agentEmail}</a></span>` : ''}
+                                ${agentWebsite ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">🌐 <a href="${agentWebsite}" target="_blank" class="text-indigo-400 hover:underline" style="font-weight: 700;">Website</a></span>` : ''}
                             </div>
                             
                             <div class="mt-2">
                                 <a href="${zillowUrl}" target="_blank" 
-                                   class="inline-block w-full text-center rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-500 transition">
+                                   class="inline-block w-full text-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 transition" style="font-weight: 700;">
                                     🏠 View on Zillow
                                 </a>
                             </div>
