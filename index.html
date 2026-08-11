@@ -559,6 +559,52 @@ function setCachedResults(cacheKey, data) {
             searchError.classList.remove('hidden');
         }
     }
+            // --- OFFLINE SEARCH (cached listings only, no API calls) ---
+    function performOfflineSearch(query) {
+        const tractField = document.getElementById('formTract');
+        const searchError = document.getElementById('searchError');
+        
+        if (!isOregonLocation(query)) {
+            searchError.textContent = '⚠️ Only Oregon properties are supported.';
+            searchError.classList.remove('hidden');
+            return;
+        }
+        searchError.classList.add('hidden');
+        
+        const searchParams = parseSearchQuery(query);
+        if (!searchParams) {
+            searchError.textContent = '⚠️ Could not determine location.';
+            searchError.classList.remove('hidden');
+            return;
+        }
+        
+        const cacheKey = (searchParams.city || '') + '|' + (searchParams.county || '') + '|' + (searchParams.zipCode || '') + '|' + (searchParams.state || '');
+        const cached = getCachedResults(cacheKey);
+        
+        if (cached) {
+            tractField.value = cached.count + " listings (saved)";
+            displayListingsOnMap(cached.listings);
+            
+            // Geocode and move map
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        map.setView([lat, lng], 11);
+                        markerGroup.clearLayers();
+                        L.marker([lat, lng]).addTo(markerGroup)
+                            .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + query + ' (saved)</span>')
+                            .openPopup();
+                    }
+                });
+        } else {
+            tractField.value = "No saved listings for " + query;
+            searchError.textContent = '⚠️ No cached listings found for "' + query + '". Switch to Live Pull mode to fetch new listings.';
+            searchError.classList.remove('hidden');
+        }
+    }
     
         function parseSearchQuery(query) {
         const q = query.toLowerCase().trim();
