@@ -339,9 +339,28 @@ function setCachedResults(cacheKey, data) {
     }
     
         // --- 2. OREGON LOCATION VALIDATION ---
-    function isOregonLocation(query) {
+        // --- 2. LOCATION VALIDATION ---
+    function isValidLocation(query) {
         const q = query.toLowerCase().trim();
         if (!q) return false;
+        
+        const state = getSelectedState();
+        
+        // ZIP code validation per state
+        const zipMatch = q.match(/\b(\d{5})\b/);
+        if (zipMatch) {
+            const zip = parseInt(zipMatch[1]);
+            const zipRanges = {
+                'OR': { min: 97000, max: 97999 },
+                'WA': { min: 98000, max: 99499 },
+                'CA': { min: 90000, max: 96199 },
+                'ID': { min: 83200, max: 83899 }
+            };
+            const range = zipRanges[state];
+            if (range && zip >= range.min && zip <= range.max) return true;
+            return false;
+        }
+        
         return true;
     }
         
