@@ -768,7 +768,159 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         }
     }
     
-            // --- 8. DISPLAY LISTINGS ON MAP ---
+                // --- LMI CENSUS TRACT OVERLAY (FFIEC DATA) ---
+    let lmiLayer;
+    let lmiDataLoaded = false;
+    
+    // FFIEC 2024 Oregon LMI Census Tracts — embedded dataset
+    const oregonLMITracts = {
+        // Low Income (<50% AMI)
+        '41013950302': 'Low', '41031940000': 'Low', '41003010602': 'Low',
+        '41029000100': 'Low', '41005022201': 'Low', '41051004104': 'Low',
+        '41051004902': 'Low', '41051008204': 'Low', '41051009002': 'Low',
+        '41051009704': 'Low', '41051009801': 'Low', '41051010001': 'Low',
+        '41051010408': 'Low', '41051010410': 'Low', '41067032409': 'Low',
+        '41047000502': 'Low', '41047000703': 'Low', '41047001605': 'Low',
+        '41047010309': 'Low', '41035970201': 'Low',
+        // Moderate Income (50-79.99% AMI)
+        '41043020400': 'Moderate', '41043020500': 'Moderate', '41043030403': 'Moderate',
+        '41043030801': 'Moderate', '41013950402': 'Moderate', '41017000201': 'Moderate',
+        '41017000202': 'Moderate', '41017001501': 'Moderate', '41017001801': 'Moderate',
+        '41017001802': 'Moderate', '41017002002': 'Moderate', '41017002101': 'Moderate',
+        '41031960201': 'Moderate', '41031960305': 'Moderate', '41003000101': 'Moderate',
+        '41003000600': 'Moderate', '41003001001': 'Moderate', '41039000500': 'Moderate',
+        '41039000705': 'Moderate', '41039000903': 'Moderate', '41039001202': 'Moderate',
+        '41039001301': 'Moderate', '41039001500': 'Moderate', '41039001902': 'Moderate',
+        '41039002103': 'Moderate', '41039002104': 'Moderate', '41039002504': 'Moderate',
+        '41039002600': 'Moderate', '41039003104': 'Moderate', '41039003201': 'Moderate',
+        '41039003301': 'Moderate', '41039003302': 'Moderate', '41039003400': 'Moderate',
+        '41039003900': 'Moderate', '41039004000': 'Moderate', '41039004200': 'Moderate',
+        '41039004403': 'Moderate', '41039004407': 'Moderate', '41039004800': 'Moderate',
+        '41039005100': 'Moderate', '41033360701': 'Moderate', '41033360703': 'Moderate',
+        '41033361201': 'Moderate', '41033361601': 'Moderate', '41029000201': 'Moderate',
+        '41029000202': 'Moderate', '41029000203': 'Moderate', '41029000300': 'Moderate',
+        '41029000502': 'Moderate', '41029001200': 'Moderate', '41029001303': 'Moderate',
+        '41029001601': 'Moderate', '41029002702': 'Moderate', '41029002901': 'Moderate',
+        '41005020800': 'Moderate', '41005020900': 'Moderate', '41005021300': 'Moderate',
+        '41005021601': 'Moderate', '41005021602': 'Moderate', '41005021802': 'Moderate',
+        '41005021900': 'Moderate', '41005022107': 'Moderate', '41005022904': 'Moderate',
+        '41005022907': 'Moderate', '41005023902': 'Moderate', '41005024200': 'Moderate',
+        '41005024303': 'Moderate', '41005024401': 'Moderate', '41009970202': 'Moderate',
+        '41009970400': 'Moderate', '41009970700': 'Moderate', '41009971100': 'Moderate',
+        '41051000601': 'Moderate', '41051000602': 'Moderate', '41051001204': 'Moderate',
+        '41051001602': 'Moderate', '41051001703': 'Moderate', '41051002001': 'Moderate',
+        '41051002102': 'Moderate', '41051003301': 'Moderate', '41051004003': 'Moderate',
+        '41051005602': 'Moderate', '41051007400': 'Moderate', '41051007600': 'Moderate',
+        '41051007700': 'Moderate', '41051007900': 'Moderate', '41051008001': 'Moderate',
+        '41051008100': 'Moderate', '41051008203': 'Moderate', '41051008301': 'Moderate',
+        '41051008302': 'Moderate', '41051008400': 'Moderate', '41051008500': 'Moderate',
+        '41051008600': 'Moderate', '41051008800': 'Moderate', '41051008904': 'Moderate',
+        '41051009001': 'Moderate', '41051009101': 'Moderate', '41051009202': 'Moderate',
+        '41051009203': 'Moderate', '41051009204': 'Moderate', '41051009301': 'Moderate',
+        '41051009302': 'Moderate', '41051009400': 'Moderate', '41051009501': 'Moderate',
+        '41051009502': 'Moderate', '41051009603': 'Moderate', '41051009604': 'Moderate',
+        '41051009605': 'Moderate', '41051009606': 'Moderate', '41051009701': 'Moderate',
+        '41051009703': 'Moderate', '41051009803': 'Moderate', '41051009804': 'Moderate',
+        '41051010101': 'Moderate', '41051010304': 'Moderate', '41051010405': 'Moderate',
+        '41051010411': 'Moderate', '41067030700': 'Moderate', '41067030900': 'Moderate',
+        '41067031005': 'Moderate', '41067031011': 'Moderate', '41067031100': 'Moderate',
+        '41067031201': 'Moderate', '41067031202': 'Moderate', '41067031402': 'Moderate',
+        '41067031606': 'Moderate', '41067031612': 'Moderate', '41067031615': 'Moderate',
+        '41067031617': 'Moderate', '41067031626': 'Moderate', '41067031703': 'Moderate',
+        '41067031705': 'Moderate', '41067031706': 'Moderate', '41067031708': 'Moderate',
+        '41067031914': 'Moderate', '41067032003': 'Moderate', '41067032005': 'Moderate',
+        '41067032501': 'Moderate', '41067032606': 'Moderate', '41067032903': 'Moderate',
+        '41067032904': 'Moderate', '41067033201': 'Moderate', '41067033202': 'Moderate',
+        '41071030201': 'Moderate', '41071030202': 'Moderate', '41071030502': 'Moderate',
+        '41071030601': 'Moderate', '41071030702': 'Moderate', '41071030703': 'Moderate',
+        '41071030801': 'Moderate', '41071030802': 'Moderate', '41071030900': 'Moderate',
+        '41047000300': 'Moderate', '41047000400': 'Moderate', '41047000501': 'Moderate',
+        '41047000702': 'Moderate', '41047001000': 'Moderate', '41047001503': 'Moderate',
+        '41047001607': 'Moderate', '41047001701': 'Moderate', '41047001702': 'Moderate',
+        '41047001801': 'Moderate', '41053005100': 'Moderate', '41053005206': 'Moderate',
+        '41053020203': 'Moderate', '41001950300': 'Moderate', '41001950600': 'Moderate',
+        '41011000506': 'Moderate', '41011000902': 'Moderate', '41011001002': 'Moderate',
+        '41011001101': 'Moderate', '41015950100': 'Moderate', '41019120002': 'Moderate',
+        '41019130001': 'Moderate', '41019160002': 'Moderate', '41019200000': 'Moderate',
+        '41019210000': 'Moderate', '41025960102': 'Moderate', '41035970100': 'Moderate',
+        '41035970500': 'Moderate', '41035970902': 'Moderate', '41035971200': 'Moderate',
+        '41035971500': 'Moderate', '41035971600': 'Moderate', '41035971800': 'Moderate',
+        '41035971900': 'Moderate', '41037960100': 'Moderate', '41041950100': 'Moderate',
+        '41045970300': 'Moderate', '41045970400': 'Moderate', '41057960500': 'Moderate',
+        '41061970700': 'Moderate', '41065970200': 'Moderate'
+    };
+    
+    async function loadLMIData() {
+        const loadingStatus = document.getElementById('lmiLoadingStatus');
+        const legend = document.getElementById('lmiLegend');
+        
+        if (lmiDataLoaded && lmiLayer) {
+            toggleLMILayer(document.getElementById('toggleLMI').checked);
+            return;
+        }
+        
+        loadingStatus.classList.remove('hidden');
+        legend.classList.add('hidden');
+        
+        try {
+            const response = await fetch('https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/2/query?where=STATE=%2741%27&outFields=TRACT,GEOID,NAME&outSR=4326&f=geojson');
+            if (!response.ok) throw new Error('Failed to load tract boundaries');
+            const geoJsonData = await response.json();
+            
+            renderLMITracts(geoJsonData, oregonLMITracts);
+            lmiDataLoaded = true;
+            loadingStatus.classList.add('hidden');
+            legend.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error loading LMI data:', error);
+            loadingStatus.textContent = 'Error loading LMI boundaries.';
+        }
+    }
+    
+    function renderLMITracts(geoJsonData, lmiMap) {
+        if (lmiLayer) { map.removeLayer(lmiLayer); }
+        
+        lmiLayer = L.geoJSON(geoJsonData, {
+            style: (feature) => {
+                const geoid = feature.properties.GEOID;
+                const incomeLevel = lmiMap[geoid];
+                
+                if (incomeLevel === 'Low') {
+                    return { fillColor: '#ef4444', weight: 1, opacity: 0.8, color: '#dc2626', fillOpacity: 0.35 };
+                } else if (incomeLevel === 'Moderate') {
+                    return { fillColor: '#f59e0b', weight: 1, opacity: 0.8, color: '#d97706', fillOpacity: 0.35 };
+                }
+                return { fillColor: 'transparent', weight: 0, opacity: 0, fillOpacity: 0 };
+            },
+            onEachFeature: (feature, layer) => {
+                const geoid = feature.properties.GEOID;
+                const incomeLevel = lmiMap[geoid];
+                if (incomeLevel) {
+                    const label = incomeLevel === 'Low' ? 'Low Income (<50% AMI)' : 'Moderate Income (50-79% AMI)';
+                    layer.bindPopup(`
+                        <div class="p-2 text-xs font-sans" style="color: #1e293b;">
+                            <strong style="color: ${incomeLevel === 'Low' ? '#dc2626' : '#d97706'};">${label}</strong><br>
+                            <span>Tract: <span style="font-family: monospace;">${geoid}</span></span><br>
+                            <span style="color: #4f46e5;">🏠 OHCS Flex Lending Eligible</span>
+                        </div>
+                    `);
+                }
+            }
+        }).addTo(map);
+    }
+    
+    function toggleLMILayer(checked) {
+        if (checked) {
+            if (!lmiDataLoaded) {
+                loadLMIData();
+            } else if (lmiLayer) {
+                lmiLayer.addTo(map);
+            }
+        } else {
+            if (lmiLayer) { map.removeLayer(lmiLayer); }
+        }
+    }
+        // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
         if (window.listingMarkers) {
             map.removeLayer(window.listingMarkers);
