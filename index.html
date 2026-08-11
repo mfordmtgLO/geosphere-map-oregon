@@ -786,15 +786,24 @@ function setCachedResults(cacheKey, data) {
         document.getElementById('btnResetApiCounter').addEventListener('click', resetApiCounter);
         
         // Search button — only way to trigger API calls now
-        document.getElementById('btnSearch').addEventListener('click', () => {
+                document.getElementById('btnSearch').addEventListener('click', () => {
             const query = document.getElementById('searchInput').value.trim();
             if (!query) {
                 document.getElementById('searchError').textContent = '⚠️ Please enter an Oregon address, city, or county.';
                 document.getElementById('searchError').classList.remove('hidden');
                 return;
             }
-            performPropertySearch(query);
+            
+            if (searchMode === 'offline') {
+                performOfflineSearch(query);
+            } else {
+                performPropertySearch(query);
+            }
         });
+        
+        // Mode toggle buttons
+        document.getElementById('btnModeOffline').addEventListener('click', () => setSearchMode('offline'));
+        document.getElementById('btnModeLive').addEventListener('click', () => setSearchMode('live'));
         
         // Allow Enter key to trigger search
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
