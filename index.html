@@ -1065,6 +1065,9 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
     function registerEventListeners() {
         document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
         document.getElementById('btnResetApiCounter').addEventListener('click', resetApiCounter);
+        document.getElementById('toggleLMI').addEventListener('change', (e) => {
+            toggleLMILayer(e.target.checked);
+        });
         
         // Search button — only way to trigger API calls now
                 document.getElementById('btnSearch').addEventListener('click', () => {
