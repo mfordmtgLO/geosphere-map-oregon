@@ -823,27 +823,27 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
                     popupAnchor: [0, -55]
                 });
                 
-                                const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
+                                               const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
                     .bindPopup(`
-                        <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px;">
-                            <strong class="text-emerald-600 text-base" style="font-weight: 700;">${price}</strong><br>
-                            <span class="text-xs text-slate-300" style="font-weight: 600;">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
-                            <span class="text-xs text-slate-300" style="font-weight: 600;">Days on Market: <strong style="font-weight: 700;">${daysOnMarket}</strong></span><br>
-                            <span class="text-xs text-slate-200" style="font-weight: 600;">${address}</span><br>
-                            <span class="text-xs text-indigo-400" style="font-weight: 600;">${propType}</span>
-                            ${mls ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">MLS#: <span class="font-mono text-amber-400" style="font-weight: 700;">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
+                        <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px; color: #1e293b;">
+                            <strong style="color: #059669; font-size: 16px; font-weight: 700;">${price}</strong><br>
+                            <span style="color: #334155; font-size: 12px; font-weight: 600;">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
+                            <span style="color: #334155; font-size: 12px; font-weight: 600;">Days on Market: <strong style="font-weight: 700; color: #1e293b;">${daysOnMarket}</strong></span><br>
+                            <span style="color: #1e293b; font-size: 12px; font-weight: 600;">${address}</span><br>
+                            <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${propType}</span>
+                            ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
                             
-                            <div class="border-t border-slate-700 mt-2 pt-2">
-                                <span class="text-xs text-slate-200" style="font-weight: 700;">Listing Agent</span><br>
-                                <span class="text-xs text-slate-300" style="font-weight: 600;">${agentName}</span>
-                                ${agentPhone ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">📞 <a href="tel:${agentPhone}" class="text-indigo-400 hover:underline" style="font-weight: 700;">${agentPhone}</a></span>` : ''}
-                                ${agentEmail ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">✉️ <a href="mailto:${agentEmail}" class="text-indigo-400 hover:underline" style="font-weight: 700;">${agentEmail}</a></span>` : ''}
-                                ${agentWebsite ? `<br><span class="text-xs text-slate-300" style="font-weight: 600;">🌐 <a href="${agentWebsite}" target="_blank" class="text-indigo-400 hover:underline" style="font-weight: 700;">Website</a></span>` : ''}
+                            <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
+                                <span style="color: #1e293b; font-size: 12px; font-weight: 700;">Listing Agent</span><br>
+                                <span style="color: #334155; font-size: 12px; font-weight: 600;">${agentName}</span>
+                                ${agentPhone ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">📞 <a href="tel:${agentPhone}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${agentPhone}</a></span>` : ''}
+                                ${agentEmail ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">✉️ <a href="mailto:${agentEmail}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${agentEmail}</a></span>` : ''}
+                                ${agentWebsite ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">🌐 <a href="${agentWebsite}" target="_blank" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Website</a></span>` : ''}
                             </div>
                             
-                            <div class="mt-2">
+                            <div style="margin-top: 8px;">
                                 <a href="${zillowUrl}" target="_blank" 
-                                   class="inline-block w-full text-center rounded-lg bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500 transition" style="font-weight: 700;">
+                                   style="display: block; width: 100%; text-align: center; border-radius: 8px; background: #2563eb; padding: 6px 12px; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
                                     🏠 View on Zillow
                                 </a>
                             </div>
