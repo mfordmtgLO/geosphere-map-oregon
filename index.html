@@ -756,6 +756,30 @@ function setCachedResults(cacheKey, data) {
             console.warn('Could not fit map to bounds:', e.message);
         }
     }
+            // --- SEARCH MODE: OFFLINE (cached only) vs LIVE (fresh API pull) ---
+    let searchMode = 'offline'; // 'offline' or 'live'
+    
+    function setSearchMode(mode) {
+        searchMode = mode;
+        const btnOffline = document.getElementById('btnModeOffline');
+        const btnLive = document.getElementById('btnModeLive');
+        const modeLabel = document.getElementById('searchModeLabel');
+        const searchBtn = document.getElementById('btnSearch');
+        
+        if (mode === 'offline') {
+            btnOffline.className = 'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition bg-slate-950 text-slate-200 shadow-sm';
+            btnLive.className = 'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition text-slate-400 hover:text-slate-200';
+            modeLabel.textContent = '📂 Viewing saved listings only — no API calls';
+            searchBtn.innerHTML = '📂 View Saved Listings';
+            searchBtn.className = 'w-full rounded-xl bg-gradient-to-r from-slate-600 to-slate-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-slate-500 hover:to-slate-600';
+        } else {
+            btnLive.className = 'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition bg-slate-950 text-amber-400 shadow-sm';
+            btnOffline.className = 'flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition text-slate-400 hover:text-slate-200';
+            modeLabel.textContent = '🔄 Live pull — will use API calls if not cached';
+            searchBtn.innerHTML = '🔍 Search Live Listings';
+            searchBtn.className = 'w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700';
+        }
+    }
     // --- 9. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
     function registerEventListeners() {
         document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
