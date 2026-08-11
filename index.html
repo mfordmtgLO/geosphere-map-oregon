@@ -612,7 +612,7 @@ function setCachedResults(cacheKey, data) {
         
         const zipMatch = q.match(/\b(97\d{3})\b/);
         if (zipMatch) {
-            return { zipCode: zipMatch[1], state: 'OR' };
+                        return { zipCode: zipMatch[1], state: getSelectedState() };
         }
         
         // Check for county names — but only if the query is JUST the county name
