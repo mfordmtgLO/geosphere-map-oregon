@@ -345,39 +345,7 @@ function setCachedResults(cacheKey, data) {
         return true;
     }
         
-        // Oregon counties
-        const oregonCounties = [
-            'multnomah', 'washington', 'clackamas', 'lane', 'marion', 'jackson',
-            'deschutes', 'linn', 'yamhill', 'benton', 'josephine', 'douglas',
-            'polk', 'coos', 'columbia', 'umatilla', 'klamath', 'lincoln',
-            'malheur', 'clatsop', 'union', 'tillamook', 'wasco', 'hood river',
-            'crook', 'jefferson', 'baker', 'curry', 'morrow', 'wallowa',
-            'harney', 'lake', 'grant', 'sherman', 'gilliam', 'wheeler'
-        ];
         
-        // Check if query contains "oregon" or "or"
-        if (q.includes('oregon') || q.includes(', or') || q.endsWith(' or')) {
-            return true;
-        }
-        
-        // Check for Oregon cities
-        for (const city of oregonCities) {
-            if (q.includes(city)) return true;
-        }
-        
-        // Check for Oregon counties
-        for (const county of oregonCounties) {
-            if (q.includes(county)) return true;
-        }
-        
-        // Check for Oregon ZIP codes (97000-97999)
-        const zipMatch = q.match(/\b(97\d{3})\b/);
-        if (zipMatch) {
-            const zip = parseInt(zipMatch[1]);
-            if (zip >= 97000 && zip <= 97999) return true;
-        }
-        
-        return false;
     }
     
     // --- 3. LOCAL DATA MATRIX DECLARATIONS ---
