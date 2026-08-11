@@ -338,20 +338,12 @@ function setCachedResults(cacheKey, data) {
         }
     }
     
-    // --- 2. OREGON LOCATION VALIDATION ---
+        // --- 2. OREGON LOCATION VALIDATION ---
     function isOregonLocation(query) {
-        const q = query.toLowerCase();
-        // Major Oregon cities
-        const oregonCities = [
-            'portland', 'salem', 'eugene', 'gresham', 'hillsboro', 'beaverton',
-            'bend', 'medford', 'springfield', 'corvallis', 'albany', 'tigard',
-            'lake oswego', 'keizer', 'grants pass', 'oregon city', 'mcminnville',
-            'redmond', 'tualatin', 'west linn', 'woodburn', 'forest grove',
-            'wilsonville', 'roseburg', 'klamath falls', 'ashland', 'milwaukie',
-            'sherwood', 'central point', 'canby', 'troutdale', 'coos bay',
-            'the dalles', 'st helens', 'la grande', 'hermiston', 'newport',
-            'ontario', 'prineville', 'dallas', 'lebanon', 'gladstone'
-        ];
+        const q = query.toLowerCase().trim();
+        if (!q) return false;
+        return true;
+    }
         
         // Oregon counties
         const oregonCounties = [
