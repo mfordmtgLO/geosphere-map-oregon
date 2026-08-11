@@ -505,7 +505,9 @@ function setCachedResults(cacheKey, data) {
         tractField.value = "Searching listings...";
         
         try {
-            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`;
+           const stateAbbr = getSelectedState();
+const stateName = { 'OR': 'Oregon', 'WA': 'Washington', 'CA': 'California', 'ID': 'Idaho' }[stateAbbr] || 'Oregon';
+const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', ' + stateName)}&limit=1`;
             const geocodeResponse = await fetch(geocodeUrl);
             const geocodeData = await geocodeResponse.json();
             
