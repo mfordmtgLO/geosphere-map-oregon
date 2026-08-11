@@ -850,7 +850,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         '41061970700': 'Moderate', '41065970200': 'Moderate'
     };
     
-        async function loadLMIData() {
+            async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
@@ -863,45 +863,31 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         legend.classList.add('hidden');
         
         try {
-            // Use the Census Bureau's GeoJSON API (CORS-friendly)
-            const response = await fetch('https://public.opendatasoft.com/api/records/1.0/search/?dataset=us-census-tracts-2022&q=&refine.state_fips=41&rows=1000&fields=geo_shape,geoid&format=geojson');
+            // Build comma-separated list of LMI GEOIDs
+            const lmiGeoids = Object.keys(oregonLMITracts);
+            const geoidList = lmiGeoids.map(g => `'${g}'`).join(',');
             
-            if (!response.ok) throw new Error('Failed to load tract boundaries');
+            // Fetch only LMI tracts from Census Bureau
+            const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/2/query?where=GEOID+IN+(${encodeURIComponent(geoidList)})&outFields=GEOID&outSR=4326&f=geojson`;
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) throw new Error('Failed to fetch');
             
             const geoJsonData = await response.json();
             
-            if (!geoJsonData || !geoJsonData.features || geoJsonData.features.length === 0) {
-                throw new Error('No tract data returned');
+            if (geoJsonData && geoJsonData.features && geoJsonData.features.length > 0) {
+                renderLMITracts(geoJsonData, oregonLMITracts);
+                lmiDataLoaded = true;
+                loadingStatus.classList.add('hidden');
+                legend.classList.remove('hidden');
+            } else {
+                throw new Error('No features returned');
             }
-            
-            renderLMITracts(geoJsonData, oregonLMITracts);
-            lmiDataLoaded = true;
-            loadingStatus.classList.add('hidden');
-            legend.classList.remove('hidden');
             
         } catch (error) {
-            console.error('Error loading LMI data:', error);
-            
-            // Fallback: Try alternative source
-            try {
-                const altResponse = await fetch('https://services1.arcgis.com/Ua5sDmgJbxcvNy4f/arcgis/rest/services/Census_Tracts_2020/FeatureServer/0/query?where=STATEFP=%2741%27&outFields=GEOID,TRACT&outSR=4326&f=geojson');
-                
-                if (!altResponse.ok) throw new Error('Alt source failed');
-                
-                const altData = await altResponse.json();
-                
-                if (altData && altData.features && altData.features.length > 0) {
-                    renderLMITracts(altData, oregonLMITracts);
-                    lmiDataLoaded = true;
-                    loadingStatus.classList.add('hidden');
-                    legend.classList.remove('hidden');
-                    return;
-                }
-            } catch (altError) {
-                console.error('Alt source also failed:', altError);
-            }
-            
-            loadingStatus.textContent = 'Error loading LMI boundaries. Try again.';
+            console.error('Error loading LMI boundaries:', error);
+            loadingStatus.textContent = 'Error loading. Try refreshing.';
         }
     }
     
