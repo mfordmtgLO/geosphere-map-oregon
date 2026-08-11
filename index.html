@@ -850,7 +850,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         '41061970700': 'Moderate', '41065970200': 'Moderate'
     };
     
-                   async function loadLMIData() {
+                       async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
@@ -862,28 +862,34 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         loadingStatus.classList.remove('hidden');
         legend.classList.add('hidden');
         
-        try {
-            const response = await fetch('/api/tracts');
-            console.log('Tract response status:', response.status);
-            
-            if (!response.ok) throw new Error('Status: ' + response.status);
-            
-            const geoJsonData = await response.json();
-            console.log('Features received:', geoJsonData.features?.length || 0);
-            
-            if (geoJsonData && geoJsonData.features && geoJsonData.features.length > 0) {
-                renderLMITracts(geoJsonData, oregonLMITracts);
-                lmiDataLoaded = true;
-                loadingStatus.classList.add('hidden');
-                legend.classList.remove('hidden');
-            } else {
-                loadingStatus.textContent = 'No tract data returned.';
+        const urls = [
+            'https://services1.arcgis.com/Ua5sDmgJbxcvNy4f/arcgis/rest/services/Census_Tracts_2020/FeatureServer/0/query?where=STATEFP=%2741%27&outFields=GEOID&returnGeometry=true&outSR=4326&f=geojson',
+            '/api/tracts'
+        ];
+        
+        for (const url of urls) {
+            try {
+                console.log('Trying:', url);
+                const response = await fetch(url);
+                
+                if (!response.ok) continue;
+                
+                const data = await response.json();
+                console.log('Features:', data?.features?.length || 0);
+                
+                if (data && data.features && data.features.length > 0) {
+                    renderLMITracts(data, oregonLMITracts);
+                    lmiDataLoaded = true;
+                    loadingStatus.classList.add('hidden');
+                    legend.classList.remove('hidden');
+                    return;
+                }
+            } catch (e) {
+                console.warn('Failed:', url, e.message);
             }
-            
-        } catch (error) {
-            console.error('LMI load error:', error.message);
-            loadingStatus.textContent = 'Error: ' + error.message;
         }
+        
+        loadingStatus.textContent = 'Could not load tract boundaries.';
     }
     
     function renderLMITracts(geoJsonData, lmiMap) {
