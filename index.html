@@ -850,7 +850,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         '41061970700': 'Moderate', '41065970200': 'Moderate'
     };
     
-            async function loadLMIData() {
+                async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
@@ -863,16 +863,9 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         legend.classList.add('hidden');
         
         try {
-            // Build comma-separated list of LMI GEOIDs
-            const lmiGeoids = Object.keys(oregonLMITracts);
-            const geoidList = lmiGeoids.map(g => `'${g}'`).join(',');
+            const response = await fetch('/api/tracts');
             
-            // Fetch only LMI tracts from Census Bureau
-            const url = `https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/Tracts_Blocks/MapServer/2/query?where=GEOID+IN+(${encodeURIComponent(geoidList)})&outFields=GEOID&outSR=4326&f=geojson`;
-            
-            const response = await fetch(url);
-            
-            if (!response.ok) throw new Error('Failed to fetch');
+            if (!response.ok) throw new Error('Failed to load');
             
             const geoJsonData = await response.json();
             
@@ -882,11 +875,11 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
                 loadingStatus.classList.add('hidden');
                 legend.classList.remove('hidden');
             } else {
-                throw new Error('No features returned');
+                throw new Error('No features');
             }
             
         } catch (error) {
-            console.error('Error loading LMI boundaries:', error);
+            console.error('Error:', error);
             loadingStatus.textContent = 'Error loading. Try refreshing.';
         }
     }
