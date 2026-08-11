@@ -606,6 +606,17 @@ function setCachedResults(cacheKey, data) {
             searchError.classList.remove('hidden');
         }
     }
+            function getSelectedState() {
+        const stateSelect = document.getElementById('stateSelect');
+        const stateFips = stateSelect ? stateSelect.value : '41';
+        const stateMap = {
+            '41': 'OR',
+            '53': 'WA',
+            '06': 'CA',
+            '16': 'ID'
+        };
+        return stateMap[stateFips] || 'OR';
+    }
     
         function parseSearchQuery(query) {
         const q = query.toLowerCase().trim();
