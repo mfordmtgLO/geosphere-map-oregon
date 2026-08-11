@@ -862,8 +862,8 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         loadingStatus.classList.remove('hidden');
         legend.classList.add('hidden');
         
-        const urls = [
-            'https://services1.arcgis.com/Ua5sDmgJbxcvNy4f/arcgis/rest/services/Census_Tracts_2020/FeatureServer/0/query?where=STATEFP=%2741%27&outFields=GEOID&returnGeometry=true&outSR=4326&f=geojson',
+                const urls = [
+            'https://services1.arcgis.com/Ua5sDmgJbxcvNy4f/arcgis/rest/services/Census_Tracts_2020/FeatureServer/0/query?where=STATEFP%3D%2741%27&outFields=GEOID&returnGeometry=true&outSR=4326&f=geojson',
             '/api/tracts'
         ];
         
