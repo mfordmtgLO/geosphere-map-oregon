@@ -654,7 +654,7 @@ function setCachedResults(cacheKey, data) {
         cityName = cityName.replace(/\b\w/g, c => c.toUpperCase());
         
         if (cityName) {
-            return { city: cityName, state: 'OR' };
+                        return { city: cityName, state: getSelectedState() };
         }
         
         return null;
