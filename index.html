@@ -466,8 +466,8 @@ function setCachedResults(cacheKey, data) {
         const tractField = document.getElementById('formTract');
         const searchError = document.getElementById('searchError');
         
-        if (!isOregonLocation(query)) {
-            searchError.textContent = '⚠️ Only Oregon properties are supported. Please enter an Oregon address, city, or county.';
+               if (!isValidLocation(query)) {
+            searchError.textContent = '⚠️ Please enter a valid address, city, or county.';
             searchError.classList.remove('hidden');
             return;
         }
@@ -541,13 +541,13 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             searchError.classList.remove('hidden');
         }
     }
-            // --- OFFLINE SEARCH (cached listings only, no API calls) ---
-    function performOfflineSearch(query) {
+               // --- OFFLINE SEARCH (cached listings only, no API calls) ---
+    async function performOfflineSearch(query) {
         const tractField = document.getElementById('formTract');
         const searchError = document.getElementById('searchError');
         
-        if (!isOregonLocation(query)) {
-            searchError.textContent = '⚠️ Only Oregon properties are supported.';
+        if (!isValidLocation(query)) {
+            searchError.textContent = '⚠️ Please enter a valid location.';
             searchError.classList.remove('hidden');
             return;
         }
@@ -560,33 +560,53 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             return;
         }
         
+        // Geocode and move map FIRST — always navigate
+        const stateAbbr = getSelectedState();
+        const stateNameMap = { 'OR': 'Oregon', 'WA': 'Washington', 'CA': 'California', 'ID': 'Idaho' };
+        const stateName = stateNameMap[stateAbbr] || 'Oregon';
+        
+        try {
+            const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', ' + stateName)}&limit=1`;
+            const geocodeResponse = await fetch(geocodeUrl);
+            const geocodeData = await geocodeResponse.json();
+            
+            if (geocodeData && geocodeData.length > 0) {
+                const mapLat = parseFloat(geocodeData[0].lat);
+                const mapLng = parseFloat(geocodeData[0].lon);
+                const displayName = geocodeData[0].display_name;
+                
+                document.getElementById('formCoords').value = mapLat.toFixed(4) + ", " + mapLng.toFixed(4);
+                
+                const zoomLevel = searchParams.zipCode ? 14 : searchParams.county ? 9 : 11;
+                map.setView([mapLat, mapLng], zoomLevel);
+                
+                markerGroup.clearLayers();
+                L.marker([mapLat, mapLng]).addTo(markerGroup)
+                    .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + displayName + '</span>')
+                    .openPopup();
+            }
+        } catch (e) {
+            console.warn('Geocoding failed:', e.message);
+        }
+        
+        // Now check cache for listings
         const cacheKey = (searchParams.city || '') + '|' + (searchParams.county || '') + '|' + (searchParams.zipCode || '') + '|' + (searchParams.state || '');
         const cached = getCachedResults(cacheKey);
         
         if (cached) {
             tractField.value = cached.count + " listings (saved)";
             displayListingsOnMap(cached.listings);
-            
-            // Geocode and move map
-           const stateAbbr2 = getSelectedState();
-const stateName2 = { 'OR': 'Oregon', 'WA': 'Washington', 'CA': 'California', 'ID': 'Idaho' }[stateAbbr2] || 'Oregon';
-fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', ' + stateName2)}&limit=1`)
-                .then(r => r.json())
-                .then(data => {
-                    if (data && data.length > 0) {
-                        const lat = parseFloat(data[0].lat);
-                        const lng = parseFloat(data[0].lon);
-                        map.setView([lat, lng], 11);
-                        markerGroup.clearLayers();
-                        L.marker([lat, lng]).addTo(markerGroup)
-                            .bindPopup('<span class="text-xs font-mono text-slate-900">📍 ' + query + ' (saved)</span>')
-                            .openPopup();
-                    }
-                });
         } else {
-            tractField.value = "No saved listings for " + query;
-            searchError.textContent = '⚠️ No cached listings found for "' + query + '". Switch to Live Pull mode to fetch new listings.';
+            tractField.value = "Location pinned — no saved listings";
+            // Show a subtle info instead of blocking error
+            searchError.textContent = '💡 No saved listings yet. Switch to Live Pull to fetch active listings.';
             searchError.classList.remove('hidden');
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                if (searchError.textContent.includes('No saved listings')) {
+                    searchError.classList.add('hidden');
+                }
+            }, 5000);
         }
     }
             function getSelectedState() {
@@ -830,7 +850,7 @@ fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURICompo
                 document.getElementById('btnSearch').addEventListener('click', () => {
             const query = document.getElementById('searchInput').value.trim();
             if (!query) {
-                document.getElementById('searchError').textContent = '⚠️ Please enter an Oregon address, city, or county.';
+                document.getElementById('searchError').textContent = '⚠️ Please enter a valid address, city, or county.';
                 document.getElementById('searchError').classList.remove('hidden');
                 return;
             }
@@ -878,7 +898,7 @@ fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURICompo
             const tract = document.getElementById('formTract').value;
 
             if (!coords) {
-                alert("⚠️ Please select a location on the map or search for an Oregon property first.");
+                alert("⚠️ Please select a location on the map or search for a location first.");
                 return;
             }
 
