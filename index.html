@@ -640,7 +640,7 @@ function setCachedResults(cacheKey, data) {
         
         for (const [key, value] of Object.entries(counties)) {
             if (q.includes(key)) {
-                return { county: value, state: 'OR' };
+                               return { county: value, state: getSelectedState() };
             }
         }
         
