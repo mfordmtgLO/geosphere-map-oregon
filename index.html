@@ -741,7 +741,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         }
     }
     
-        // --- 8. DISPLAY LISTINGS ON MAP ---
+            // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
         if (window.listingMarkers) {
             map.removeLayer(window.listingMarkers);
@@ -775,7 +775,48 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
                 const zillowAddress = encodeURIComponent(address);
                 const zillowUrl = `https://www.zillow.com/homes/${zillowAddress}_rb/`;
                 
-                const marker = L.marker([listing.latitude, listing.longitude])
+                // Price label (floating above marker)
+                const priceLabel = price !== 'N/A' ? price : '';
+                
+                // Custom marker with price label
+                const customIcon = L.divIcon({
+                    className: 'price-marker',
+                    html: `
+                        <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+                            <div style="
+                                background: rgba(15, 23, 42, 0.95);
+                                color: #22c55e;
+                                font-size: 12px;
+                                font-weight: 700;
+                                font-family: system-ui, sans-serif;
+                                padding: 3px 8px;
+                                border-radius: 6px;
+                                border: 1.5px solid #22c55e;
+                                white-space: nowrap;
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+                                margin-bottom: 2px;
+                            ">${priceLabel}</div>
+                            <div style="
+                                width: 12px;
+                                height: 12px;
+                                background: #4f46e5;
+                                border: 2px solid white;
+                                border-radius: 50%;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+                            "></div>
+                            <div style="
+                                width: 2px;
+                                height: 8px;
+                                background: #4f46e5;
+                            "></div>
+                        </div>
+                    `,
+                    iconSize: [0, 0],
+                    iconAnchor: [0, 0],
+                    popupAnchor: [0, -55]
+                });
+                
+                const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
                     .bindPopup(`
                         <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px;">
                             <strong class="text-emerald-600 text-base">${price}</strong><br>
@@ -806,7 +847,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             }
         });
         
-                try {
+        try {
             if (listings.length > 0 && window.listingMarkers && window.listingMarkers.getLayers() && window.listingMarkers.getLayers().length > 0) {
                 const bounds = window.listingMarkers.getBounds();
                 if (bounds && bounds.isValid()) {
