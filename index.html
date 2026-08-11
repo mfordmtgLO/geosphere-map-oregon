@@ -850,7 +850,7 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         '41061970700': 'Moderate', '41065970200': 'Moderate'
     };
     
-                async function loadLMIData() {
+                   async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
@@ -864,10 +864,12 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         
         try {
             const response = await fetch('/api/tracts');
+            console.log('Tract response status:', response.status);
             
-            if (!response.ok) throw new Error('Failed to load');
+            if (!response.ok) throw new Error('Status: ' + response.status);
             
             const geoJsonData = await response.json();
+            console.log('Features received:', geoJsonData.features?.length || 0);
             
             if (geoJsonData && geoJsonData.features && geoJsonData.features.length > 0) {
                 renderLMITracts(geoJsonData, oregonLMITracts);
@@ -875,12 +877,12 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
                 loadingStatus.classList.add('hidden');
                 legend.classList.remove('hidden');
             } else {
-                throw new Error('No features');
+                loadingStatus.textContent = 'No tract data returned.';
             }
             
         } catch (error) {
-            console.error('Error:', error);
-            loadingStatus.textContent = 'Error loading. Try refreshing.';
+            console.error('LMI load error:', error.message);
+            loadingStatus.textContent = 'Error: ' + error.message;
         }
     }
     
