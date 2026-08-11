@@ -589,7 +589,9 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             displayListingsOnMap(cached.listings);
             
             // Geocode and move map
-            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Oregon')}&limit=1`)
+           const stateAbbr2 = getSelectedState();
+const stateName2 = { 'OR': 'Oregon', 'WA': 'Washington', 'CA': 'California', 'ID': 'Idaho' }[stateAbbr2] || 'Oregon';
+fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', ' + stateName2)}&limit=1`)
                 .then(r => r.json())
                 .then(data => {
                     if (data && data.length > 0) {
