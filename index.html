@@ -998,19 +998,18 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
     
    
     
-                             async function loadLMIData() {
+                                async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
         loadingStatus.classList.remove('hidden');
         legend.classList.add('hidden');
         
-        // Wait for both files to load (retry up to 20 times)
-        let attempts = 0;
-        while ((typeof oregonTractGeoJSON === 'undefined' || typeof oregonLMITracts === 'undefined') && attempts < 20) {
-            await new Promise(r => setTimeout(r, 250));
-            attempts++;
-        }
+        renderLMITracts(oregonTractGeoJSON, oregonLMITracts);
+        lmiDataLoaded = true;
+        loadingStatus.classList.add('hidden');
+        legend.classList.remove('hidden');
+    }
         
         if (typeof oregonTractGeoJSON !== 'undefined' && oregonTractGeoJSON.features 
             && typeof oregonLMITracts !== 'undefined') {
