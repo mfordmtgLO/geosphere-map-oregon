@@ -777,18 +777,18 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
     
    
     
-                                async function loadLMIData() {
+                                   async function loadLMIData() {
         const loadingStatus = document.getElementById('lmiLoadingStatus');
         const legend = document.getElementById('lmiLegend');
         
         loadingStatus.classList.remove('hidden');
         legend.classList.add('hidden');
         
-        renderLMITracts(oregonTractGeoJSON, oregonLMITracts);
-        lmiDataLoaded = true;
-        loadingStatus.classList.add('hidden');
-        legend.classList.remove('hidden');
-    }
+        let attempts = 0;
+        while ((typeof oregonTractGeoJSON === 'undefined' || typeof oregonLMITracts === 'undefined') && attempts < 20) {
+            await new Promise(r => setTimeout(r, 250));
+            attempts++;
+        }
         
         if (typeof oregonTractGeoJSON !== 'undefined' && oregonTractGeoJSON.features 
             && typeof oregonLMITracts !== 'undefined') {
@@ -797,9 +797,11 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             loadingStatus.classList.add('hidden');
             legend.classList.remove('hidden');
         } else {
-            loadingStatus.textContent = 'LMI data not loaded after waiting.';
+            loadingStatus.textContent = 'LMI data not loaded. Check files.';
         }
     }
+        
+       
     
     function renderLMITracts(geoJsonData, lmiMap) {
         if (lmiLayer) { map.removeLayer(lmiLayer); }
