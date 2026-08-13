@@ -1,5 +1,6 @@
-// RENTCAST PROXY V12 - UPSTASH KV CACHE
+// RENTCAST PROXY V13 - LIVE PULL + SAVED SNAPSHOT EXPORT
 import { kv } from '@vercel/kv';
+import { buildOverlaySets } from './overlay-classification.js';
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
@@ -20,24 +21,10 @@ export default async function handler(req, res) {
     
     const cacheKey = getCacheKey({ city, county, zipCode, state });
     
-    // Check Upstash KV cache
-    try {
-        const cached = await kv.get(cacheKey);
-        if (cached) {
-            console.log('KV HIT:', cacheKey);
-            res.setHeader('X-Cache', 'KV-HIT');
-            res.setHeader('Access-Control-Allow-Origin', '*');
-            res.setHeader('Content-Type', 'application/json');
-            return res.status(200).json({
-                ...cached,
-                fromCache: true
-            });
-        }
-    } catch (e) {
-        console.warn('KV read failed, fetching live:', e.message);
-    }
-    
-    console.log('KV MISS:', cacheKey);
+    // This endpoint powers GeoSphere's Live Pull mode. It intentionally does
+    // not read KV first: every invocation refreshes Rentcast and replaces the
+    // saved snapshot for the area. Cache-only browsing remains in Saved Listings.
+    console.log('LIVE REFRESH:', cacheKey);
     
     try {
         const baseParams = new URLSearchParams({
@@ -91,11 +78,19 @@ export default async function handler(req, res) {
             return true;
         });
         
+        const savedAt = Date.now();
+        const overlaySets = await buildOverlaySets(filtered, state);
         const result = {
-            count: filtered.length,
+            version: 2,
+            snapshotId: `${cacheKey}:${savedAt}`,
+            areaKey: cacheKey,
+            area: { city: city ?? null, county: county ?? null, zipCode: zipCode ?? null, state: state ?? null },
+            count: overlaySets.all.length,
             totalFetched: allListings.length,
-            listings: filtered,
-            cachedAt: Date.now()
+            listings: overlaySets.all,
+            overlaySets,
+            savedAt,
+            cachedAt: savedAt
         };
         
         // Store in Upstash KV
@@ -106,7 +101,7 @@ export default async function handler(req, res) {
             console.warn('KV write failed:', e.message);
         }
         
-        res.setHeader('X-Cache', 'KV-MISS');
+        res.setHeader('X-Cache', 'LIVE-REFRESH');
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).json({

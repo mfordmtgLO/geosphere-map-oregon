@@ -772,15 +772,8 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         
         const cacheKey = (searchParams.city || '') + '|' + (searchParams.county || '') + '|' + (searchParams.zipCode || '') + '|' + (searchParams.state || '');
         
-        // Check cache FIRST — cached results bypass hard stop
-        const cached = getCachedResults(cacheKey);
-        if (cached) {
-            tractField.value = cached.count + " listings (cached)";
-            displayListingsOnMap(cached.listings);
-            return cached;
-        }
-        
-        // Hard stop check AFTER cache — only blocks new API calls
+        // Live Pull always refreshes Rentcast and replaces the area snapshot.
+        // Saved Listings mode remains cache-only and never calls Rentcast.
         if (isApiHardStopped()) {
             tractField.value = "API LIMIT REACHED - 50/50";
             alert('🚫 RentCast API hard stop active. Monthly limit of 50 pulls reached.\n\nUse the "Reset Monthly Counter" button when your billing cycle renews.');
