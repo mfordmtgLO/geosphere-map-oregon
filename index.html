@@ -896,6 +896,69 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
             if (lmiLayer) { map.removeLayer(lmiLayer); }
         }
     }
+        let usdaLayer;
+let usdaDataLoaded = false;
+
+async function loadUSDAData() {
+    const legend = document.getElementById('usdaLegend');
+    
+    if (usdaDataLoaded && usdaLayer) {
+        toggleUSDALayer(document.getElementById('toggleUSDA').checked);
+        return;
+    }
+    
+    try {
+        if (typeof oregonUSDATracts === 'undefined') {
+            const res = await fetch('oregon-usda-tracts.js');
+            const text = await res.text();
+            eval(text);
+        }
+        
+        if (typeof oregonUSDATracts !== 'undefined' && typeof oregonTractGeoJSON !== 'undefined') {
+            renderUSDATracts(oregonTractGeoJSON, oregonUSDATracts);
+            usdaDataLoaded = true;
+            legend.classList.remove('hidden');
+        }
+    } catch (e) {
+        console.error('USDA data load failed:', e);
+    }
+}
+
+function renderUSDATracts(geoJsonData, usdaMap) {
+    if (usdaLayer) { map.removeLayer(usdaLayer); }
+    
+    usdaLayer = L.geoJSON(geoJsonData, {
+        style: (feature) => {
+            const geoid = feature.properties.GEOID;
+            if (usdaMap[geoid]) {
+                return { fillColor: '#10b981', weight: 1.5, opacity: 0.9, color: '#059669', fillOpacity: 0.4 };
+            }
+            return { fillColor: 'transparent', weight: 0, opacity: 0, fillOpacity: 0 };
+        },
+        onEachFeature: (feature, layer) => {
+            if (usdaMap[feature.properties.GEOID]) {
+                layer.bindPopup(`
+                    <div style="color:#1e293b;">
+                        <strong style="color:#059669;">🏡 USDA Rural Development Eligible</strong><br>
+                        Tract: <span style="font-family:monospace;">${feature.properties.GEOID}</span>
+                    </div>
+                `);
+            }
+        }
+    }).addTo(map);
+}
+
+function toggleUSDALayer(checked) {
+    if (checked) {
+        if (!usdaDataLoaded) {
+            loadUSDAData();
+        } else if (usdaLayer) {
+            usdaLayer.addTo(map);
+        }
+    } else {
+        if (usdaLayer) { map.removeLayer(usdaLayer); }
+    }
+}
         // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
         if (window.listingMarkers) {
