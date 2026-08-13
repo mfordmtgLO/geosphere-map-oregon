@@ -1036,6 +1036,14 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
         document.getElementById('toggleLMI').addEventListener('change', (e) => {
             toggleLMILayer(e.target.checked);
         });
+        document.getElementById('btnClearListings').addEventListener('click', function() {
+    if (window.listingMarkers) {
+        map.removeLayer(window.listingMarkers);
+        window.listingMarkers = null;
+    }
+    document.getElementById('formTract').value = '';
+    document.getElementById('formCoords').value = '';
+});
         
         // Search button — only way to trigger API calls now
                 document.getElementById('btnSearch').addEventListener('click', () => {
