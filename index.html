@@ -433,6 +433,45 @@ function setCachedResults(cacheKey, data) {
     function initializeMap() {
         map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
         L.control.zoom({ position: 'topright' }).addTo(map);
+        function initializeMap() {
+    map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
+    L.control.zoom({ position: 'topright' }).addTo(map);
+
+    // ---- ADD FULLSCREEN CODE HERE ----
+    var fullscreenControl = L.control({ position: 'topright' });
+    fullscreenControl.onAdd = function() {
+        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control-fullscreen');
+        div.innerHTML = '<a href="#" title="Enter Fullscreen" style="font-size:18px;line-height:26px;text-align:center;display:block;width:30px;height:30px;background:white;color:#1e293b;text-decoration:none;">⛶</a>';
+        L.DomEvent.on(div, 'click', function(e) {
+            e.preventDefault();
+            var mapContainer = document.getElementById('map');
+            if (!document.fullscreenElement) {
+                mapContainer.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        });
+        return div;
+    };
+    fullscreenControl.addTo(map);
+
+    document.addEventListener('fullscreenchange', function() {
+        var icon = document.querySelector('.leaflet-control-fullscreen a');
+        if (icon) {
+            icon.innerHTML = document.fullscreenElement ? '✕' : '⛶';
+            icon.title = document.fullscreenElement ? 'Exit Fullscreen' : 'Enter Fullscreen';
+        }
+    });
+    // ---- END FULLSCREEN CODE ----
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    markerGroup = L.layerGroup().addTo(map);
+    renderSpatialLayers();
+}
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
