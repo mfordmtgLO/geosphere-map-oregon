@@ -13,7 +13,6 @@
         
 <script src="https://geosphere-map-oregon.vercel.app/lmi-matched-tracts.js"></script>
 <script src="https://geosphere-map-oregon.vercel.app/oregon-lmi-tracts.js"></script>
-    <script src="https://oregon-map-usda.vercel.app/"></script>
     
     
     <style>
@@ -126,12 +125,12 @@
 </div>
 <label class="flex items-center space-x-3 cursor-pointer group">
     <input type="checkbox" id="toggleUSDA" class="rounded border-slate-800 bg-slate-950 text-emerald-500 h-4 w-4">
-    <span class="text-sm text-slate-300 group-hover:text-slate-100">🏡 USDA Rural Development Eligible</span>
+    <span class="text-sm text-slate-300 group-hover:text-slate-100">USDA Rural Development Map Areas</span>
 </label>
 <div id="usdaLegend" class="hidden pl-6 space-y-1 mt-2">
     <div class="flex items-center space-x-2">
         <span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span>
-        <span class="text-xs text-slate-400">USDA Eligible Area</span>
+        <span class="text-xs text-slate-400">USDA geographic area</span>
     </div>
 </div>
 
@@ -912,52 +911,63 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
     }
         let usdaLayer;
 let usdaDataLoaded = false;
+let usdaLoadPromise;
 
 async function loadUSDAData() {
     const legend = document.getElementById('usdaLegend');
-    
-    if (usdaDataLoaded && usdaLayer) {
-        toggleUSDALayer(document.getElementById('toggleUSDA').checked);
-        return;
-    }
-    
+
     try {
-        if (typeof oregonUSDATracts === 'undefined') {
-            const res = await fetch('oregon-usda-tracts.js');
-            const text = await res.text();
-            eval(text);
+        if (!usdaLoadPromise) {
+            usdaLoadPromise = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'usda-rural-development-geojson.js';
+                script.async = true;
+                script.onload = resolve;
+                script.onerror = () => reject(new Error('The local USDA geographic data file could not be loaded.'));
+                document.head.appendChild(script);
+            });
         }
-        
-        if (typeof oregonUSDATracts !== 'undefined' && typeof oregonTractGeoJSON !== 'undefined') {
-            renderUSDATracts(oregonTractGeoJSON, oregonUSDATracts);
-            usdaDataLoaded = true;
-            legend.classList.remove('hidden');
+
+        await usdaLoadPromise;
+        if (!window.usdaRuralDevelopmentGeojson || window.usdaRuralDevelopmentGeojson.type !== 'FeatureCollection') {
+            throw new Error('The local USDA geographic data file has an invalid GeoJSON structure.');
         }
-    } catch (e) {
-        console.error('USDA data load failed:', e);
+
+        usdaDataLoaded = true;
+        renderUSDAAreas();
+        legend.classList.remove('hidden');
+    } catch (error) {
+        console.error('USDA data load failed:', error);
+        usdaLoadPromise = undefined;
     }
 }
 
-function renderUSDATracts(geoJsonData, usdaMap) {
-    if (usdaLayer) { map.removeLayer(usdaLayer); }
-    
-    usdaLayer = L.geoJSON(geoJsonData, {
-        style: (feature) => {
-            const geoid = feature.properties.GEOID;
-            if (usdaMap[geoid]) {
-                return { fillColor: '#10b981', weight: 1.5, opacity: 0.9, color: '#059669', fillOpacity: 0.4 };
-            }
-            return { fillColor: 'transparent', weight: 0, opacity: 0, fillOpacity: 0 };
-        },
+function renderUSDAAreas() {
+    if (!map || !window.usdaRuralDevelopmentGeojson) return;
+    if (usdaLayer) map.removeLayer(usdaLayer);
+
+    const selectedStateFips = document.getElementById('stateSelect').value;
+    usdaLayer = L.geoJSON(window.usdaRuralDevelopmentGeojson, {
+        filter: (feature) => feature.properties?.stateFips === selectedStateFips,
+        style: () => ({
+            fillColor: '#10b981',
+            weight: 1.5,
+            opacity: 0.9,
+            color: '#059669',
+            fillOpacity: 0.4
+        }),
         onEachFeature: (feature, layer) => {
-            if (usdaMap[feature.properties.GEOID]) {
-                layer.bindPopup(`
-                    <div style="color:#1e293b;">
-                        <strong style="color:#059669;">🏡 USDA Rural Development Eligible</strong><br>
-                        Tract: <span style="font-family:monospace;">${feature.properties.GEOID}</span>
-                    </div>
-                `);
-            }
+            const { state, stateFips, sourceObjectId, effectiveDate } = feature.properties || {};
+            layer.bindPopup(`
+                <div style="color:#1e293b; min-width: 180px;">
+                    <strong style="color:#059669;">USDA Rural Development Area</strong><br>
+                    State: <span style="font-family:monospace;">${state || stateFips || 'Unknown'}</span><br>
+                    Feature: <span style="font-family:monospace;">${sourceObjectId ?? 'Unknown'}</span><br>
+                    Effective: <span style="font-family:monospace;">${effectiveDate ? effectiveDate.slice(0, 10) : 'Unknown'}</span>
+                </div>
+            `);
+            layer.on('mouseover', () => layer.setStyle({ fillOpacity: 0.55, color: '#047857' }));
+            layer.on('mouseout', () => layer.setStyle({ fillOpacity: 0.4, color: '#059669' }));
         }
     }).addTo(map);
 }
@@ -966,11 +976,11 @@ function toggleUSDALayer(checked) {
     if (checked) {
         if (!usdaDataLoaded) {
             loadUSDAData();
-        } else if (usdaLayer) {
-            usdaLayer.addTo(map);
+        } else {
+            renderUSDAAreas();
         }
-    } else {
-        if (usdaLayer) { map.removeLayer(usdaLayer); }
+    } else if (usdaLayer) {
+        map.removeLayer(usdaLayer);
     }
 }
         // --- 8. DISPLAY LISTINGS ON MAP ---
@@ -1122,8 +1132,13 @@ function toggleUSDALayer(checked) {
             toggleLMILayer(e.target.checked);
         });
         document.getElementById('toggleUSDA').addEventListener('change', (e) => {
-    toggleUSDALayer(e.target.checked);
-});
+            toggleUSDALayer(e.target.checked);
+        });
+        document.getElementById('stateSelect').addEventListener('change', () => {
+            if (usdaDataLoaded && document.getElementById('toggleUSDA').checked) {
+                renderUSDAAreas();
+            }
+        });
         document.getElementById('btnClearListings').addEventListener('click', function() {
     if (window.listingMarkers) {
         map.removeLayer(window.listingMarkers);
@@ -1151,10 +1166,17 @@ function toggleUSDALayer(checked) {
         map.removeLayer(geoJsonLayer);
         geoJsonLayer = null;
     }
+    // Clear USDA geographic layer
+    if (usdaLayer) {
+        map.removeLayer(usdaLayer);
+        usdaLayer = null;
+    }
     // Uncheck toggles
     document.getElementById('toggleLMI').checked = false;
+    document.getElementById('toggleUSDA').checked = false;
     document.getElementById('toggleGeoJson').checked = false;
     document.getElementById('lmiLegend')?.classList.add('hidden');
+    document.getElementById('usdaLegend')?.classList.add('hidden');
     
     // Clear form fields
     document.getElementById('formCoords').value = '';
