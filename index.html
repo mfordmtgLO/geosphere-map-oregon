@@ -1107,6 +1107,9 @@ function toggleUSDALayer(checked) {
         document.getElementById('toggleLMI').addEventListener('change', (e) => {
             toggleLMILayer(e.target.checked);
         });
+        document.getElementById('toggleUSDA').addEventListener('change', (e) => {
+    toggleUSDALayer(e.target.checked);
+});
         document.getElementById('btnClearListings').addEventListener('click', function() {
     if (window.listingMarkers) {
         map.removeLayer(window.listingMarkers);
