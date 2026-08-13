@@ -948,7 +948,8 @@ function renderUSDAAreas() {
 
     const selectedStateFips = document.getElementById('stateSelect').value;
     usdaLayer = L.geoJSON(window.usdaRuralDevelopmentGeojson, {
-        filter: (feature) => feature.properties?.stateFips === selectedStateFips,
+        // Some source polygons cross state borders; displayStateFips preserves those verified map-view associations.
+        filter: (feature) => (feature.properties?.displayStateFips || [feature.properties?.stateFips]).includes(selectedStateFips),
         style: () => ({
             fillColor: '#10b981',
             weight: 1.5,
