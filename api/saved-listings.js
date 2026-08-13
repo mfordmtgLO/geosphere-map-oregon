@@ -67,6 +67,12 @@ async function readSnapshots(keys) {
   return snapshots.sort((a, b) => Number(b.savedAt ?? 0) - Number(a.savedAt ?? 0));
 }
 
+/** Shared cache-only reader for the protected dashboard export and the map UI. */
+export async function readSavedListingPulls() {
+  const keys = await listSnapshotKeys();
+  return readSnapshots(keys);
+}
+
 /**
  * Server-to-server export of cache-only Rentcast snapshots. It never calls
  * Rentcast. Consumers must provide the shared GEOSPHERE_SYNC_TOKEN header.
@@ -78,8 +84,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const keys = await listSnapshotKeys();
-    const pulls = await readSnapshots(keys);
+    const pulls = await readSavedListingPulls();
     return sendJson(res, 200, {
       version: 1,
       generatedAt: new Date().toISOString(),

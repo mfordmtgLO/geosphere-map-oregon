@@ -148,6 +148,22 @@
                         </button>
                     </div>
                     <p id="searchModeLabel" class="text-xs text-slate-500 text-center">Viewing previously cached listings only</p>
+                    <div id="savedPullBrowser" class="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <label for="savedPullSelect" class="text-xs font-semibold text-slate-300">Shared saved area pull</label>
+                            <button id="btnRefreshSavedPulls" type="button" class="text-[11px] font-semibold text-indigo-300 hover:text-indigo-200">Refresh</button>
+                        </div>
+                        <select id="savedPullSelect" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                            <option value="">Loading saved pulls…</option>
+                        </select>
+                        <select id="savedOverlaySelect" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                            <option value="all">All eligible listings</option>
+                            <option value="lmi">LMI listings</option>
+                            <option value="usda">USDA RD listings</option>
+                            <option value="lmiUsda">LMI + USDA RD listings</option>
+                        </select>
+                        <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
+                    </div>
                     
                     <input type="text" id="searchInput" placeholder="e.g., address, city, county" 
                            class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500">
@@ -1118,6 +1134,53 @@ function toggleUSDALayer(checked) {
             searchBtn.className = 'w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700';
         }
     }
+    // --- SHARED SAVED-PULL BROWSER (cache-only, never calls Rentcast) ---
+    let sharedSavedPulls = [];
+
+    function formatSavedPullLabel(pull) {
+        const area = pull.area || {};
+        const label = area.label || [area.city, area.county, area.zipCode, area.state].filter(Boolean).join(' · ') || pull.cacheKey;
+        const when = pull.savedAt ? new Date(pull.savedAt).toLocaleString() : 'date unavailable';
+        return `${label} — ${pull.count || pull.overlaySets?.all?.length || 0} listings (${when})`;
+    }
+
+    function renderSelectedSavedPull() {
+        const select = document.getElementById('savedPullSelect');
+        const overlay = document.getElementById('savedOverlaySelect').value;
+        const status = document.getElementById('savedPullStatus');
+        const tractField = document.getElementById('formTract');
+        const pull = sharedSavedPulls.find((item) => item.snapshotId === select.value);
+        if (!pull) return;
+        const listings = pull.overlaySets?.[overlay] || [];
+        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD', lmiUsda: 'LMI + USDA RD' }[overlay] || overlay;
+        tractField.value = `${listings.length} saved ${overlayLabel} listings`;
+        status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
+        displayListingsOnMap(listings);
+    }
+
+    async function loadSharedSavedPulls() {
+        const select = document.getElementById('savedPullSelect');
+        const status = document.getElementById('savedPullStatus');
+        select.innerHTML = '<option value="">Loading saved pulls…</option>';
+        try {
+            const response = await fetch('/api/map-saved-listings');
+            if (!response.ok) throw new Error(`Saved listing request failed (${response.status})`);
+            const payload = await response.json();
+            sharedSavedPulls = Array.isArray(payload.pulls) ? payload.pulls : [];
+            if (!sharedSavedPulls.length) {
+                select.innerHTML = '<option value="">No shared saved pulls yet</option>';
+                status.textContent = 'Run a Live Pull for an area first. Saved Listings will then browse its persisted snapshot without calling Rentcast.';
+                return;
+            }
+            select.innerHTML = sharedSavedPulls.map((pull) => `<option value="${escapeHtml(pull.snapshotId)}">${escapeHtml(formatSavedPullLabel(pull))}</option>`).join('');
+            renderSelectedSavedPull();
+        } catch (error) {
+            console.error('Shared saved-pull load failed:', error);
+            select.innerHTML = '<option value="">Saved pulls unavailable</option>';
+            status.textContent = 'Could not load shared saved pulls. Existing browser-saved listings remain available through the normal Saved Listings search.';
+        }
+    }
+
     // --- 9. FORM PIPELINE HOOKS & DOM REGISTER HANDLERS ---
     function registerEventListeners() {
         document.getElementById('toggleGeoJson').addEventListener('change', renderSpatialLayers);
@@ -1202,6 +1265,9 @@ function toggleUSDALayer(checked) {
         // Mode toggle buttons
         document.getElementById('btnModeOffline').addEventListener('click', () => setSearchMode('offline'));
         document.getElementById('btnModeLive').addEventListener('click', () => setSearchMode('live'));
+        document.getElementById('btnRefreshSavedPulls').addEventListener('click', loadSharedSavedPulls);
+        document.getElementById('savedPullSelect').addEventListener('change', renderSelectedSavedPull);
+        document.getElementById('savedOverlaySelect').addEventListener('change', renderSelectedSavedPull);
         
         // Allow Enter key to trigger search
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -1209,6 +1275,8 @@ function toggleUSDALayer(checked) {
                 document.getElementById('btnSearch').click();
             }
         });
+
+        loadSharedSavedPulls();
 
         // Map click — now only captures coordinates, NO API call
         map.on('click', async (e) => {
