@@ -1047,6 +1047,40 @@ const geocodeUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${e
     document.getElementById('formTract').value = '';
     document.getElementById('formCoords').value = '';
 });
+        document.getElementById('btnResetMap').addEventListener('click', function() {
+    // Reset map view to initial state (Eugene)
+    map.setView([44.0521, -123.0867], 13);
+    
+    // Clear listing markers
+    if (window.listingMarkers) {
+        map.removeLayer(window.listingMarkers);
+        window.listingMarkers = null;
+    }
+    // Clear LMI layer
+    if (lmiLayer) {
+        map.removeLayer(lmiLayer);
+        lmiLayer = null;
+    }
+    // Clear GeoJSON layer
+    if (geoJsonLayer) {
+        map.removeLayer(geoJsonLayer);
+        geoJsonLayer = null;
+    }
+    // Uncheck toggles
+    document.getElementById('toggleLMI').checked = false;
+    document.getElementById('toggleGeoJson').checked = false;
+    document.getElementById('lmiLegend')?.classList.add('hidden');
+    
+    // Clear form fields
+    document.getElementById('formCoords').value = '';
+    document.getElementById('formTract').value = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchError').classList.add('hidden');
+    
+    // Hide LMI legend
+    var legend = document.getElementById('lmiLegend');
+    if (legend) legend.classList.add('hidden');
+});
         
         // Search button — only way to trigger API calls now
                 document.getElementById('btnSearch').addEventListener('click', () => {
