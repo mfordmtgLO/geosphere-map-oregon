@@ -532,16 +532,9 @@ function setCachedResults(cacheKey, data) {
                 const mapContainer = document.getElementById('map');
                 if (!mapContainer) return;
                 const inlineActive = mapContainer.classList.contains('map-inline-fullscreen');
-                if (document.fullscreenElement === mapContainer) {
-                    document.exitFullscreen();
-                } else if (inlineActive) {
+                if (inlineActive) {
                     mapContainer.classList.remove('map-inline-fullscreen');
                     syncFullscreenButton();
-                } else if (mapContainer.requestFullscreen) {
-                    mapContainer.requestFullscreen().catch(function() {
-                        mapContainer.classList.add('map-inline-fullscreen');
-                        syncFullscreenButton();
-                    });
                 } else {
                     mapContainer.classList.add('map-inline-fullscreen');
                     syncFullscreenButton();
