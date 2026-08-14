@@ -35,9 +35,36 @@
             pointer-events: auto;
         }
         .sidebar-scroll {
-    max-height: calc(100vh - 4rem); /* header height offset */
-    overflow-y: auto;
-}
+            height: 100%;
+            overflow-x: hidden;
+            overflow-y: scroll;
+            overscroll-behavior: contain;
+            scrollbar-gutter: stable;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 12px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: #0f172a; border-left: 1px solid #1e293b; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border: 3px solid #0f172a; border-radius: 999px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .sidebar-scroll { scrollbar-color: #475569 #0f172a; scrollbar-width: auto; }
+        #map:fullscreen,
+        #map:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
+        }
+        .map-fullscreen-button {
+            align-items: center;
+            background: #ffffff;
+            color: #1e293b !important;
+            display: flex !important;
+            font-size: 17px;
+            font-weight: 700;
+            height: 30px;
+            justify-content: center;
+            line-height: 1;
+            text-decoration: none !important;
+            width: 30px;
+        }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
@@ -67,7 +94,7 @@
     <main class="flex flex-1 overflow-hidden">
         
         <!-- Left Panel Sidebar Control Panels -->
-        <section class="w-96 flex flex-col border-r border-slate-800 bg-slate-900/50 backdrop-blur-md p-6 space-y-4 z-40 sidebar-scroll">
+        <section aria-label="Map controls" class="w-96 flex flex-col border-r border-slate-800 bg-slate-900/50 backdrop-blur-md p-6 space-y-4 z-40 sidebar-scroll">
             
             <!-- Spatial Map Manipulation Layer Toggles Box -->
             <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
@@ -473,45 +500,38 @@ function setCachedResults(cacheKey, data) {
     function initializeMap() {
         map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
         L.control.zoom({ position: 'topright' }).addTo(map);
-        function initializeMap() {
-    map = L.map('map', { zoomControl: false }).setView([44.0521, -123.0867], 13);
-    L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // ---- ADD FULLSCREEN CODE HERE ----
-    var fullscreenControl = L.control({ position: 'topright' });
-    fullscreenControl.onAdd = function() {
-        var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control-fullscreen');
-        div.innerHTML = '<a href="#" title="Enter Fullscreen" style="font-size:18px;line-height:26px;text-align:center;display:block;width:30px;height:30px;background:white;color:#1e293b;text-decoration:none;">⛶</a>';
-        L.DomEvent.on(div, 'click', function(e) {
-            e.preventDefault();
-            var mapContainer = document.getElementById('map');
-            if (!document.fullscreenElement) {
-                mapContainer.requestFullscreen();
-            } else {
-                document.exitFullscreen();
+        const fullscreenControl = L.control({ position: 'topright' });
+        fullscreenControl.onAdd = function() {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control-fullscreen');
+            const button = L.DomUtil.create('a', 'map-fullscreen-button', container);
+            button.href = '#';
+            button.setAttribute('role', 'button');
+            button.setAttribute('aria-label', 'Enter fullscreen map');
+            button.title = 'Enter fullscreen map';
+            button.textContent = '⛶';
+            L.DomEvent.disableClickPropagation(container);
+            L.DomEvent.on(button, 'click', function(event) {
+                L.DomEvent.preventDefault(event);
+                const mapContainer = document.getElementById('map');
+                if (!mapContainer) return;
+                if (document.fullscreenElement === mapContainer) document.exitFullscreen();
+                else mapContainer.requestFullscreen();
+            });
+            return container;
+        };
+        fullscreenControl.addTo(map);
+
+        document.addEventListener('fullscreenchange', function() {
+            const button = document.querySelector('.map-fullscreen-button');
+            const isMapFullscreen = document.fullscreenElement === document.getElementById('map');
+            if (button) {
+                button.textContent = isMapFullscreen ? '×' : '⛶';
+                button.title = isMapFullscreen ? 'Exit fullscreen map' : 'Enter fullscreen map';
+                button.setAttribute('aria-label', button.title);
             }
+            window.setTimeout(() => map.invalidateSize(), 0);
         });
-        return div;
-    };
-    fullscreenControl.addTo(map);
-
-    document.addEventListener('fullscreenchange', function() {
-        var icon = document.querySelector('.leaflet-control-fullscreen a');
-        if (icon) {
-            icon.innerHTML = document.fullscreenElement ? '✕' : '⛶';
-            icon.title = document.fullscreenElement ? 'Exit Fullscreen' : 'Enter Fullscreen';
-        }
-    });
-    // ---- END FULLSCREEN CODE ----
-
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
-
-    markerGroup = L.layerGroup().addTo(map);
-    renderSpatialLayers();
-}
 
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
