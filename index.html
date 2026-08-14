@@ -52,6 +52,14 @@
             height: 100vh;
             background: #0f172a;
         }
+        #map.map-inline-fullscreen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            width: 100vw !important;
+            height: 100vh !important;
+            background: #0f172a;
+        }
         .map-fullscreen-button {
             align-items: center;
             background: #ffffff;
@@ -511,12 +519,33 @@ function setCachedResults(cacheKey, data) {
             button.title = 'Enter fullscreen map';
             button.textContent = '⛶';
             L.DomEvent.disableClickPropagation(container);
+            const syncFullscreenButton = function() {
+                const mapContainer = document.getElementById('map');
+                const isFullscreen = document.fullscreenElement === mapContainer || mapContainer?.classList.contains('map-inline-fullscreen');
+                button.textContent = isFullscreen ? '×' : '⛶';
+                button.title = isFullscreen ? 'Exit fullscreen map' : 'Enter fullscreen map';
+                button.setAttribute('aria-label', button.title);
+                window.setTimeout(() => map.invalidateSize(), 0);
+            };
             L.DomEvent.on(button, 'click', function(event) {
                 L.DomEvent.preventDefault(event);
                 const mapContainer = document.getElementById('map');
                 if (!mapContainer) return;
-                if (document.fullscreenElement === mapContainer) document.exitFullscreen();
-                else mapContainer.requestFullscreen();
+                const inlineActive = mapContainer.classList.contains('map-inline-fullscreen');
+                if (document.fullscreenElement === mapContainer) {
+                    document.exitFullscreen();
+                } else if (inlineActive) {
+                    mapContainer.classList.remove('map-inline-fullscreen');
+                    syncFullscreenButton();
+                } else if (mapContainer.requestFullscreen) {
+                    mapContainer.requestFullscreen().catch(function() {
+                        mapContainer.classList.add('map-inline-fullscreen');
+                        syncFullscreenButton();
+                    });
+                } else {
+                    mapContainer.classList.add('map-inline-fullscreen');
+                    syncFullscreenButton();
+                }
             });
             return container;
         };
@@ -524,7 +553,8 @@ function setCachedResults(cacheKey, data) {
 
         document.addEventListener('fullscreenchange', function() {
             const button = document.querySelector('.map-fullscreen-button');
-            const isMapFullscreen = document.fullscreenElement === document.getElementById('map');
+            const mapContainer = document.getElementById('map');
+            const isMapFullscreen = document.fullscreenElement === mapContainer || mapContainer?.classList.contains('map-inline-fullscreen');
             if (button) {
                 button.textContent = isMapFullscreen ? '×' : '⛶';
                 button.title = isMapFullscreen ? 'Exit fullscreen map' : 'Enter fullscreen map';
