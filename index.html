@@ -53,23 +53,15 @@
             background: #0f172a;
         }
         #map.map-inline-fullscreen {
-            position: fixed;
+            position: absolute;
             inset: 0;
-            z-index: 10000;
-            width: 100vw !important;
-            height: 100vh !important;
+            z-index: 100;
+            width: 100% !important;
+            height: 100% !important;
             background: #0f172a;
         }
-        body.map-immersive > header,
-        body.map-immersive > main > section[aria-label="Map controls"],
-        body.map-immersive #map ~ div {
+        #map.map-inline-fullscreen ~ div {
             display: none !important;
-        }
-        body.map-immersive > main {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            overflow: visible;
         }
         .map-fullscreen-button {
             align-items: center;
@@ -545,17 +537,29 @@ function setCachedResults(cacheKey, data) {
                 const inlineActive = mapContainer.classList.contains('map-inline-fullscreen');
                 if (inlineActive) {
                     mapContainer.classList.remove('map-inline-fullscreen');
-                    document.body.classList.remove('map-immersive');
                     syncFullscreenButton();
                 } else {
                     mapContainer.classList.add('map-inline-fullscreen');
-                    document.body.classList.add('map-immersive');
                     syncFullscreenButton();
                 }
             });
             return container;
         };
         fullscreenControl.addTo(map);
+
+        document.addEventListener('keydown', function(event) {
+            const mapContainer = document.getElementById('map');
+            if (event.key === 'Escape' && mapContainer?.classList.contains('map-inline-fullscreen')) {
+                mapContainer.classList.remove('map-inline-fullscreen');
+                const button = document.querySelector('.map-fullscreen-button');
+                if (button) {
+                    button.textContent = '⛶';
+                    button.title = 'Enter fullscreen map';
+                    button.setAttribute('aria-label', button.title);
+                }
+                window.setTimeout(() => map.invalidateSize(), 0);
+            }
+        });
 
         document.addEventListener('fullscreenchange', function() {
             const button = document.querySelector('.map-fullscreen-button');
