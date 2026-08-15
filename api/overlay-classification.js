@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import path from "node:path";
 
 let overlayIndexPromise;
 
@@ -12,7 +13,7 @@ function parseAssignedJson(source, filename) {
 }
 
 async function readAssignedJson(filename) {
-  const source = await readFile(new URL(`../${filename}`, import.meta.url), "utf8");
+  const source = await readFile(path.join(process.cwd(), filename), "utf8");
   return parseAssignedJson(source, filename);
 }
 
@@ -33,7 +34,7 @@ export function parseLmiTractLookup(source, filename = "lmi-matched-tracts.js") 
 }
 
 async function readLmiTractLookup(filename) {
-  const source = await readFile(new URL(`../${filename}`, import.meta.url), "utf8");
+  const source = await readFile(path.join(process.cwd(), filename), "utf8");
   return parseLmiTractLookup(source, filename);
 }
 
