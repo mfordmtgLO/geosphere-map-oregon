@@ -72,7 +72,8 @@ function needsOverlayRefresh(snapshot) {
   return snapshot.overlaySets.all.some((listing) =>
     !listing?.overlayEligibility ||
     typeof listing.overlayEligibility.lmi !== "boolean" ||
-    typeof listing.overlayEligibility.usda !== "boolean"
+    typeof listing.overlayEligibility.usda !== "boolean" ||
+    listing.overlayEligibility.usdaInterpretation !== "outside-ineligible-v1"
   );
 }
 

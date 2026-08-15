@@ -99,6 +99,14 @@ function includesPoint(point, entries, predicate = () => true) {
   );
 }
 
+export function isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips) {
+  const liesInIneligibleArea = includesPoint(point, usdaEntries, (entry) =>
+    entry.stateFips === stateFips || entry.displayStateFips.includes(stateFips)
+  );
+
+  return !liesInIneligibleArea;
+}
+
 async function loadOverlayIndex() {
   const [tractGeoJson, lmiTracts, usdaGeoJson] = await Promise.all([
     readAssignedJson("oregon-lmi-tracts.js"),
@@ -126,7 +134,9 @@ const STATE_FIPS = { OR: "41", WA: "53", CA: "06", ID: "16" };
 
 /**
  * Enriches one Rentcast snapshot using the exact LMI and USDA source geometries
- * rendered in GeoSphere. A classification failure returns safe empty overlays so
+ * rendered in GeoSphere. USDA source polygons are ineligible urban/metro areas,
+ * so properties outside them are classified as USDA RD eligible. A failure returns
+ * safe empty overlays so
  * a manual Rentcast pull is never blocked by the optional map enrichment step.
  */
 export async function buildOverlaySets(listings, state) {
@@ -140,10 +150,15 @@ export async function buildOverlaySets(listings, state) {
       const hasCoordinates = Number.isFinite(longitude) && Number.isFinite(latitude);
       const point = [longitude, latitude];
       const lmi = hasCoordinates && includesPoint(point, lmiEntries);
-      const usda = hasCoordinates && includesPoint(point, usdaEntries, (entry) =>
-        entry.stateFips === stateFips || entry.displayStateFips.includes(stateFips)
-      );
-      return { ...listing, overlayEligibility: { lmi, usda } };
+      const usda = hasCoordinates && isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips);
+      return {
+        ...listing,
+        overlayEligibility: {
+          lmi,
+          usda,
+          usdaInterpretation: "outside-ineligible-v1",
+        },
+      };
     });
     return {
       all: enriched,
