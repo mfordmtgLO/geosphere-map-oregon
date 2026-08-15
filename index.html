@@ -55,10 +55,21 @@
         #map.map-inline-fullscreen {
             position: fixed;
             inset: 0;
-            z-index: 1000;
+            z-index: 10000;
             width: 100vw !important;
             height: 100vh !important;
             background: #0f172a;
+        }
+        body.map-immersive > header,
+        body.map-immersive > main > section[aria-label="Map controls"],
+        body.map-immersive #map ~ div {
+            display: none !important;
+        }
+        body.map-immersive > main {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            overflow: visible;
         }
         .map-fullscreen-button {
             align-items: center;
@@ -534,9 +545,11 @@ function setCachedResults(cacheKey, data) {
                 const inlineActive = mapContainer.classList.contains('map-inline-fullscreen');
                 if (inlineActive) {
                     mapContainer.classList.remove('map-inline-fullscreen');
+                    document.body.classList.remove('map-immersive');
                     syncFullscreenButton();
                 } else {
                     mapContainer.classList.add('map-inline-fullscreen');
+                    document.body.classList.add('map-immersive');
                     syncFullscreenButton();
                 }
             });
