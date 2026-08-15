@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { kv } from "@vercel/kv";
+import { buildOverlaySets } from "./overlay-classification.js";
 
 const CACHE_KEY_PREFIX = "listings:";
 const MAX_SCAN_PAGES = 100;
@@ -67,10 +68,26 @@ async function readSnapshots(keys) {
   return snapshots.sort((a, b) => Number(b.savedAt ?? 0) - Number(a.savedAt ?? 0));
 }
 
+function needsOverlayRefresh(snapshot) {
+  return snapshot.overlaySets.all.some((listing) =>
+    !listing?.overlayEligibility ||
+    typeof listing.overlayEligibility.lmi !== "boolean" ||
+    typeof listing.overlayEligibility.usda !== "boolean"
+  );
+}
+
+async function refreshLegacyOverlaySets(snapshot) {
+  if (!needsOverlayRefresh(snapshot)) return snapshot;
+
+  const overlaySets = await buildOverlaySets(snapshot.overlaySets.all, snapshot.area?.state ?? "OR");
+  return { ...snapshot, count: overlaySets.all.length, overlaySets };
+}
+
 /** Shared cache-only reader for the protected dashboard export and the map UI. */
 export async function readSavedListingPulls() {
   const keys = await listSnapshotKeys();
-  return readSnapshots(keys);
+  const snapshots = await readSnapshots(keys);
+  return Promise.all(snapshots.map(refreshLegacyOverlaySets));
 }
 
 /**

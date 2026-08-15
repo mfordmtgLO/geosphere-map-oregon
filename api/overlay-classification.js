@@ -16,6 +16,27 @@ async function readAssignedJson(filename) {
   return parseAssignedJson(source, filename);
 }
 
+export function parseLmiTractLookup(source, filename = "lmi-matched-tracts.js") {
+  const tracts = {};
+  const matcher = /['"](\d{11})['"]\s*:\s*['"](Low|Moderate)['"]/g;
+  let match;
+
+  while ((match = matcher.exec(source))) {
+    tracts[match[1]] = match[2];
+  }
+
+  if (!Object.keys(tracts).length) {
+    throw new Error(`Unable to parse LMI tract lookup: ${filename}`);
+  }
+
+  return tracts;
+}
+
+async function readLmiTractLookup(filename) {
+  const source = await readFile(new URL(`../${filename}`, import.meta.url), "utf8");
+  return parseLmiTractLookup(source, filename);
+}
+
 function boundsForGeometry(geometry) {
   const bounds = { minLng: Infinity, minLat: Infinity, maxLng: -Infinity, maxLat: -Infinity };
   const visit = (value) => {
@@ -80,7 +101,7 @@ function includesPoint(point, entries, predicate = () => true) {
 async function loadOverlayIndex() {
   const [tractGeoJson, lmiTracts, usdaGeoJson] = await Promise.all([
     readAssignedJson("oregon-lmi-tracts.js"),
-    readAssignedJson("lmi-matched-tracts.js"),
+    readLmiTractLookup("lmi-matched-tracts.js"),
     readAssignedJson("usda-rural-development-geojson.js"),
   ]);
 
