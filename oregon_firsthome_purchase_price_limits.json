@@ -1,0 +1,234 @@
+{
+  "metadata": {
+    "program": "Oregon FirstHome",
+    "title": "FirstHome Purchase Price Limits",
+    "jurisdiction": "Oregon",
+    "currency": "USD",
+    "source": {
+      "agency": "Oregon Housing and Community Services",
+      "url": "https://www.oregon.gov/ohcs/homeownership/lenders-real-estate-professionals/Pages/firsthome-purchase-price-limits.aspx?wp3617=l:100",
+      "retrieved_on": "2026-08-19"
+    },
+    "coverage": "36 Oregon counties",
+    "purpose": "Maximum home price eligible for financing through the FirstHome loan product.",
+    "null_value_meaning": "The official source lists the limit as 'Not applicable'."
+  },
+  "county_price_limits": [
+    {
+      "county": "Baker",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Benton",
+      "non_targeted_price_limit_usd": 643743,
+      "targeted_price_limit_usd": 786797,
+      "targeted_area_details": "Census tract 0011.01"
+    },
+    {
+      "county": "Clackamas",
+      "non_targeted_price_limit_usd": 733987,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Clatsop",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 720617,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Columbia",
+      "non_targeted_price_limit_usd": 733987,
+      "targeted_price_limit_usd": 897096,
+      "targeted_area_details": "Within the city limits of Vernonia"
+    },
+    {
+      "county": "Coos",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Crook",
+      "non_targeted_price_limit_usd": 752036,
+      "targeted_price_limit_usd": 919155,
+      "targeted_area_details": "Census tract 9503.02"
+    },
+    {
+      "county": "Curry",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Within the city limits of Port Orford; Census tract 9501.00"
+    },
+    {
+      "county": "Deschutes",
+      "non_targeted_price_limit_usd": 752036,
+      "targeted_price_limit_usd": 919155,
+      "targeted_area_details": "Census tracts 0002.01, 0018.01"
+    },
+    {
+      "county": "Douglas",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Within the city limits of Myrtle Creek; Census tracts 0100.00, 1200.02, 1300.01"
+    },
+    {
+      "county": "Gilliam",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Grant",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Harney",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Hood River",
+      "non_targeted_price_limit_usd": 797760,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Jackson",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 665173,
+      "targeted_area_details": "Within the city limits of Ashland; Census tracts 0001.00, 0002.01, 0002.02, 0016.01"
+    },
+    {
+      "county": "Jefferson",
+      "non_targeted_price_limit_usd": 752036,
+      "targeted_price_limit_usd": 919155,
+      "targeted_area_details": "Census tract 9400.00"
+    },
+    {
+      "county": "Josephine",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tracts 3612.01, 3616.01"
+    },
+    {
+      "county": "Klamath",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tracts 9702.01, 9709.02, 9712.00, 9715.00, 9716.00, 9718.00, 9719.00"
+    },
+    {
+      "county": "Lake",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Lane",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tracts 0015.00, 0021.03, 0021.04, 0042.00"
+    },
+    {
+      "county": "Lincoln",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tracts 9501.00, 9504.01"
+    },
+    {
+      "county": "Linn",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tract 0204.00"
+    },
+    {
+      "county": "Malheur",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Census tract 9704.00"
+    },
+    {
+      "county": "Marion",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Within the city limits of Silverton and Turner; Census tracts 0005.02, 0007.03, 0016.05, 0016.07, 0018.01, 0103.09"
+    },
+    {
+      "county": "Morrow",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Multnomah",
+      "non_targeted_price_limit_usd": 733987,
+      "targeted_price_limit_usd": 897096,
+      "targeted_area_details": "Census tracts 0041.04, 0082.04, 0090.02, 0096.04, 0098.01"
+    },
+    {
+      "county": "Polk",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Sherman",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Tillamook",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Umatilla",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Within the city limits of Milton-Freewater"
+    },
+    {
+      "county": "Union",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Wallowa",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Wasco",
+      "non_targeted_price_limit_usd": 566354,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Washington",
+      "non_targeted_price_limit_usd": 733987,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    },
+    {
+      "county": "Wheeler",
+      "non_targeted_price_limit_usd": null,
+      "targeted_price_limit_usd": 692211,
+      "targeted_area_details": "Entire county is targeted."
+    },
+    {
+      "county": "Yamhill",
+      "non_targeted_price_limit_usd": 733987,
+      "targeted_price_limit_usd": null,
+      "targeted_area_details": "No targeted areas"
+    }
+  ]
+}
