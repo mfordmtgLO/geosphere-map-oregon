@@ -73,7 +73,8 @@ function needsOverlayRefresh(snapshot) {
     !listing?.overlayEligibility ||
     typeof listing.overlayEligibility.lmi !== "boolean" ||
     typeof listing.overlayEligibility.usda !== "boolean" ||
-    listing.overlayEligibility.usdaInterpretation !== "outside-ineligible-v1"
+    listing.overlayEligibility.usdaInterpretation !== "outside-ineligible-v1" ||
+    typeof listing.overlayEligibility.firstHome?.available !== "boolean"
   );
 }
 

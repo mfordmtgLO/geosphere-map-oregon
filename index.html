@@ -157,6 +157,17 @@
                                 <span class="text-xs text-slate-400">Moderate Income (50-79% AMI)</span>
                             </div>
                         </div>
+                <div class="mt-3 rounded-xl border border-emerald-900/70 bg-emerald-950/30 p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-300">OHCS FirstHome price screen</span>
+                        <span id="firstHomeStatus" class="text-[10px] font-semibold text-slate-500">Loading official limits…</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed text-slate-400">Use the saved-listing FirstHome view to require both an FFIEC LMI tract and a listed price at or below the applicable 2026 targeted or non-targeted maximum. This is a screening aid, not an approval.</p>
+                    <label class="block text-[11px] font-medium text-slate-400">County limit review<select id="firstHomeCountySelect" disabled class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500"><option>Loading counties…</option></select></label>
+                    <div id="firstHomeLimitControls" class="hidden space-y-2"></div>
+                    <button id="btnResetFirstHomeOverrides" type="button" disabled class="w-full rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:border-emerald-700 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-40">Reset local review values to official limits</button>
+                    <p class="text-[10px] leading-relaxed text-slate-500">Slider edits are saved only in this browser for map review. They do not modify OHCS data or the protected dashboard sync feed.</p>
+                </div>
                 <!-- USDA RD Overlay -->
 <div class="border-t border-slate-800 pt-2 mt-2">
     <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">USDA RD Overlay</span>
@@ -199,6 +210,7 @@
                             <option value="lmi">LMI listings</option>
                             <option value="usda">USDA RD eligible listings</option>
                             <option value="lmiUsda">LMI + USDA RD eligible listings</option>
+                            <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
                         </select>
                         <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
                     </div>
@@ -1053,6 +1065,89 @@ function toggleUSDALayer(checked) {
         map.removeLayer(usdaLayer);
     }
 }
+
+// --- OHCS FIRSTHOME PURCHASE-PRICE SCREEN (OFFICIAL LIMIT DATA + LOCAL REVIEW OVERRIDES) ---
+let firstHomeLimitData = null;
+const FIRST_HOME_OVERRIDE_STORAGE_KEY = 'geosphere-firsthome-limit-review-v1';
+
+function formatFirstHomeDollars(value) {
+    return Number.isFinite(Number(value)) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value)) : 'Not applicable';
+}
+
+function getFirstHomeOverrides() {
+    try { return JSON.parse(localStorage.getItem(FIRST_HOME_OVERRIDE_STORAGE_KEY) || '{}'); }
+    catch { return {}; }
+}
+
+function saveFirstHomeOverrides(overrides) {
+    localStorage.setItem(FIRST_HOME_OVERRIDE_STORAGE_KEY, JSON.stringify(overrides));
+}
+
+function getEffectiveFirstHomeScreening(listing) {
+    const screening = listing?.overlayEligibility?.firstHome;
+    if (!screening?.available) return screening || null;
+    const override = getFirstHomeOverrides()?.[screening.county]?.[screening.areaType];
+    const priceLimit = Number.isFinite(Number(override)) ? Number(override) : screening.priceLimit;
+    const price = Number(listing.price);
+    const priceEligible = Number.isFinite(price) && price > 0 && Number.isFinite(priceLimit) ? price <= priceLimit : null;
+    return { ...screening, priceLimit, priceEligible, lmiEligible: listing?.overlayEligibility?.lmi === true && priceEligible === true, localOverride: Number.isFinite(Number(override)) };
+}
+
+function firstHomeListingPasses(listing) {
+    return getEffectiveFirstHomeScreening(listing)?.lmiEligible === true;
+}
+
+function renderFirstHomeLimitControls() {
+    const select = document.getElementById('firstHomeCountySelect');
+    const controls = document.getElementById('firstHomeLimitControls');
+    const reset = document.getElementById('btnResetFirstHomeOverrides');
+    if (!firstHomeLimitData?.county_price_limits?.length || !select || !controls || !reset) return;
+    const county = firstHomeLimitData.county_price_limits.find((item) => item.county === select.value) || firstHomeLimitData.county_price_limits[0];
+    const overrides = getFirstHomeOverrides()[county.county] || {};
+    const fields = [
+        ['targeted', 'Targeted area maximum', county.targeted_price_limit_usd],
+        ['non_targeted', 'Non-targeted maximum', county.non_targeted_price_limit_usd],
+    ];
+    controls.innerHTML = `<p class="text-[10px] leading-relaxed text-slate-500">${escapeHtml(county.targeted_area_details || 'No targeted-area detail supplied.')}</p>` + fields.map(([key, label, official]) => {
+        if (official === null || !Number.isFinite(Number(official))) return `<div class="rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-2 text-[11px] text-slate-500"><span class="font-semibold text-slate-400">${label}:</span> Not applicable in official source</div>`;
+        const value = Number.isFinite(Number(overrides[key])) ? Number(overrides[key]) : Number(official);
+        return `<label class="block rounded-lg border border-slate-800 bg-slate-950/50 px-2.5 py-2 text-[11px] text-slate-300"><span class="flex items-center justify-between gap-2"><span>${label}</span><strong id="firstHome-${key}-value" class="text-emerald-300">${formatFirstHomeDollars(value)}</strong></span><input data-firsthome-limit="${key}" type="range" min="250000" max="1250000" step="1000" value="${value}" class="mt-2 w-full accent-emerald-500"><span class="mt-1 block text-[10px] text-slate-500">Official: ${formatFirstHomeDollars(official)}</span></label>`;
+    }).join('');
+    controls.classList.remove('hidden');
+    controls.querySelectorAll('[data-firsthome-limit]').forEach((input) => input.addEventListener('input', (event) => {
+        const key = event.target.dataset.firsthomeLimit;
+        const value = Number(event.target.value);
+        const next = getFirstHomeOverrides();
+        next[county.county] = { ...(next[county.county] || {}), [key]: value };
+        saveFirstHomeOverrides(next);
+        const valueNode = document.getElementById(`firstHome-${key}-value`);
+        if (valueNode) valueNode.textContent = formatFirstHomeDollars(value);
+        renderSelectedSavedPull();
+    }));
+    reset.disabled = false;
+}
+
+async function loadFirstHomeLimits() {
+    const status = document.getElementById('firstHomeStatus');
+    const select = document.getElementById('firstHomeCountySelect');
+    try {
+        const response = await fetch('/oregon_firsthome_purchase_price_limits.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error(`FirstHome limits request failed (${response.status})`);
+        firstHomeLimitData = await response.json();
+        const counties = Array.isArray(firstHomeLimitData?.county_price_limits) ? firstHomeLimitData.county_price_limits : [];
+        if (!counties.length) throw new Error('No county limits were supplied.');
+        select.innerHTML = counties.map((item) => `<option value="${escapeHtml(item.county)}">${escapeHtml(item.county)} County</option>`).join('');
+        select.disabled = false;
+        status.textContent = `Official limits loaded · ${counties.length} counties`;
+        status.className = 'text-[10px] font-semibold text-emerald-300';
+        renderFirstHomeLimitControls();
+    } catch (error) {
+        console.error('FirstHome limit load failed:', error);
+        status.textContent = 'FirstHome limits unavailable';
+        status.className = 'text-[10px] font-semibold text-rose-300';
+    }
+}
+
         // --- 8. DISPLAY LISTINGS ON MAP ---
     function displayListingsOnMap(listings) {
         if (window.listingMarkers) {
@@ -1075,6 +1170,10 @@ function toggleUSDALayer(checked) {
                 const daysOnMarket = listing.daysOnMarket || 'N/A';
                 const mls = listing.mlsNumber || '';
                 const mlsName = listing.mlsName || '';
+                const firstHome = getEffectiveFirstHomeScreening(listing);
+                const firstHomeMarkup = firstHome?.available
+                    ? `<div style="margin-top: 8px; border-top: 1px solid #d1fae5; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${firstHome.lmiEligible ? '#dcfce7' : firstHome.priceEligible === false ? '#fee2e2' : '#fef3c7'}; color:${firstHome.lmiEligible ? '#166534' : firstHome.priceEligible === false ? '#b91c1c' : '#92400e'}; padding:3px 7px; font-size:11px; font-weight:700;">OHCS FirstHome ${firstHome.lmiEligible ? 'price screen met' : firstHome.priceEligible === false ? 'over purchase-price limit' : 'screening review needed'}</span><br><span style="color:#334155; font-size:12px; font-weight:600;">${firstHome.areaType === 'targeted' ? 'Targeted area' : 'Non-targeted area'} · limit ${formatFirstHomeDollars(firstHome.priceLimit)}${firstHome.localOverride ? ' (local review value)' : ''}</span><br><span style="color:#64748b; font-size:10px;">${firstHome.targetedAreaDetails || 'Confirm FirstHome area and program requirements with OHCS.'}</span></div>`
+                    : `<div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; color:#64748b; font-size:11px;">OHCS FirstHome limit: not applicable or unavailable for this saved listing’s county.</div>`;
                 
                 // Listing agent info
                 const agent = listing.listingAgent || {};
@@ -1137,6 +1236,7 @@ function toggleUSDALayer(checked) {
                             <span style="color: #1e293b; font-size: 12px; font-weight: 600;">${address}</span><br>
                             <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${propType}</span>
                             ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
+                            ${firstHomeMarkup}
                             
                             <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
                                 <span style="color: #1e293b; font-size: 12px; font-weight: 700;">Listing Agent</span><br>
@@ -1211,8 +1311,10 @@ function toggleUSDALayer(checked) {
         const tractField = document.getElementById('formTract');
         const pull = sharedSavedPulls.find((item) => item.snapshotId === select.value);
         if (!pull) return;
-        const listings = pull.overlaySets?.[overlay] || [];
-        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible' }[overlay] || overlay;
+        const listings = overlay === 'firstHome'
+            ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
+            : (pull.overlaySets?.[overlay] || []);
+        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened' }[overlay] || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
         displayListingsOnMap(listings);
@@ -1328,6 +1430,12 @@ function toggleUSDALayer(checked) {
         document.getElementById('btnRefreshSavedPulls').addEventListener('click', loadSharedSavedPulls);
         document.getElementById('savedPullSelect').addEventListener('change', renderSelectedSavedPull);
         document.getElementById('savedOverlaySelect').addEventListener('change', renderSelectedSavedPull);
+        document.getElementById('firstHomeCountySelect').addEventListener('change', renderFirstHomeLimitControls);
+        document.getElementById('btnResetFirstHomeOverrides').addEventListener('click', () => {
+            localStorage.removeItem(FIRST_HOME_OVERRIDE_STORAGE_KEY);
+            renderFirstHomeLimitControls();
+            renderSelectedSavedPull();
+        });
         
         // Allow Enter key to trigger search
         document.getElementById('searchInput').addEventListener('keypress', (e) => {
@@ -1336,6 +1444,7 @@ function toggleUSDALayer(checked) {
             }
         });
 
+        loadFirstHomeLimits();
         loadSharedSavedPulls();
 
         // Map click — now only captures coordinates, NO API call
