@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/*.js": {
-      "includeFiles": "{oregon-lmi-tracts.js,lmi-matched-tracts.js,usda-rural-development-geojson.js}"
+      "includeFiles": "{oregon-lmi-tracts.js,lmi-matched-tracts.js,usda-rural-development-geojson.js,oregon_firsthome_purchase_price_limits.json}"
     }
   }
 }
