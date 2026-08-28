@@ -92,6 +92,31 @@ export function parseFhfaPacificCountyLimits(source, filename = "fhfa_2026_pacif
   return { metadata: payload.metadata ?? {}, states };
 }
 
+export function parseIdahoMrbTaxExemptSalesPriceLimits(source, filename = "idaho_housing_mrb_tax_exempt_sales_price_limits_2026.json") {
+  let payload;
+  try {
+    payload = JSON.parse(source);
+  } catch {
+    throw new Error(`Unable to parse Idaho MRB sales-price limits: ${filename}`);
+  }
+  if (!Array.isArray(payload?.county_sales_price_limits)) {
+    throw new Error(`Missing county_sales_price_limits in ${filename}`);
+  }
+  const counties = new Map();
+  for (const item of payload.county_sales_price_limits) {
+    const countyName = normalizeAreaName(item?.county);
+    const salesPriceLimit = Number(item?.sales_price_limit_usd);
+    if (!countyName || !Number.isFinite(salesPriceLimit) || salesPriceLimit <= 0) continue;
+    counties.set(countyName, {
+      county: String(item.county).trim(),
+      targetedStatus: item.targeted_status === "targeted" ? "targeted" : "non_targeted",
+      salesPriceLimit,
+    });
+  }
+  if (counties.size !== 44) throw new Error(`Expected 44 Idaho county sales-price limits in ${filename}`);
+  return { metadata: payload.metadata ?? {}, counties };
+}
+
 function normalizeAreaName(value) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+county$/i, "").replace(/\s+/g, " ");
 }
@@ -187,15 +212,17 @@ export function isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFi
 }
 
 async function loadOverlayIndex() {
-  const [tractGeoJson, lmiTracts, usdaGeoJson, firstHomeLimitsSource, fhfaPacificLimitsSource] = await Promise.all([
+  const [tractGeoJson, lmiTracts, usdaGeoJson, firstHomeLimitsSource, fhfaPacificLimitsSource, idahoMrbLimitsSource] = await Promise.all([
     readAssignedJson("oregon-lmi-tracts.js"),
     readLmiTractLookup("lmi-matched-tracts.js"),
     readAssignedJson("usda-rural-development-geojson.js"),
     readFile(path.join(process.cwd(), "oregon_firsthome_purchase_price_limits.json"), "utf8"),
     readFile(path.join(process.cwd(), "data/fhfa_2026_pacific_county_limits.json"), "utf8"),
+    readFile(path.join(process.cwd(), "data/idaho_housing_mrb_tax_exempt_sales_price_limits_2026.json"), "utf8"),
   ]);
   const firstHomeLimits = parseFirstHomePurchaseLimits(firstHomeLimitsSource);
   const fhfaPacificLimits = parseFhfaPacificCountyLimits(fhfaPacificLimitsSource);
+  const idahoMrbLimits = parseIdahoMrbTaxExemptSalesPriceLimits(idahoMrbLimitsSource);
 
   return {
     lmiEntries: makeSpatialEntries(tractGeoJson.features ?? [], (feature) => ({
@@ -208,6 +235,7 @@ async function loadOverlayIndex() {
     })),
     firstHomeLimits,
     fhfaPacificLimits,
+    idahoMrbLimits,
   };
 }
 
@@ -311,6 +339,41 @@ export function getCalhfaMyHomePropertyReview(listing, requestedState) {
   };
 }
 
+export function getIdahoMrbTaxExemptReview(listing, requestedState, idahoMrbLimits) {
+  const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
+  const countyLimit = idahoMrbLimits?.counties?.get(normalizeAreaName(listing?.county));
+  const price = Number(listing?.price);
+  const hasListedPrice = Number.isFinite(price) && price > 0;
+  const hasAddress = Boolean(String(listing?.formattedAddress ?? listing?.address ?? "").trim());
+  const hasCoordinates = Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude));
+  const priceWithinLimit = hasListedPrice && countyLimit ? price <= countyLimit.salesPriceLimit : null;
+  const available = state === "ID" && Boolean(countyLimit);
+  return {
+    available,
+    reviewReady: available && hasAddress && hasCoordinates && priceWithinLimit === true,
+    screenVersion: "ihfa-tax-exempt-mrb-county-sales-price-review-2026-05-06-v1",
+    sourceEffectiveDate: idahoMrbLimits?.metadata?.effective_date_chart ?? null,
+    sourceRevisionDate: idahoMrbLimits?.metadata?.revision_date_chart ?? null,
+    state,
+    county: countyLimit?.county ?? (listing?.county ? String(listing.county).trim() : null),
+    targetedStatus: countyLimit?.targetedStatus ?? null,
+    salesPriceLimit: countyLimit?.salesPriceLimit ?? null,
+    priceWithinLimit,
+    priceScreenApplied: true,
+    reason: state !== "ID"
+      ? "Idaho Housing Tax-Exempt/MRB county price review is configured for Idaho saved listings only."
+      : !countyLimit
+        ? "A recognized Idaho county with a current authorized IHFA Tax-Exempt sales-price value is required for this review context."
+        : !hasAddress || !hasCoordinates
+          ? "Idaho listing needs an address and map coordinates for county sales-price review."
+          : !hasListedPrice
+            ? "A usable listed price is required for this Idaho county sales-price review."
+            : priceWithinLimit
+              ? `Listed price is at or below the authorized IHFA ${countyLimit.county} County ${countyLimit.targetedStatus === "targeted" ? "targeted" : "non-targeted"} Tax-Exempt/MRB sales-price review limit.`
+              : `Listed price is above the authorized IHFA ${countyLimit.county} County Tax-Exempt/MRB sales-price review limit.`,
+  };
+}
+
 export function getLakeviewNationalPropertyScreening(listing) {
   const propertyType = normalizedPropertyType(listing);
   const unitCount = inferredUnitCount(listing, propertyType);
@@ -388,6 +451,7 @@ export function buildProgramReviewSets(listings) {
   return {
     calhfaMyHome: all.filter((listing) => listing?.overlayEligibility?.calhfaMyHome?.reviewReady === true),
     fhfaCountyLimit: all.filter((listing) => listing?.overlayEligibility?.fhfaCountyLimit?.reviewReady === true),
+    idahoMrbTaxExempt: all.filter((listing) => listing?.overlayEligibility?.idahoMrbTaxExempt?.reviewReady === true),
     lakeviewNational: all.filter((listing) => listing?.overlayEligibility?.lakeviewNational?.reviewReady === true),
   };
 }
@@ -426,7 +490,7 @@ export function getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateF
 export async function buildOverlaySets(listings, state) {
   const all = Array.isArray(listings) ? listings : [];
   try {
-    const { lmiEntries, usdaEntries, firstHomeLimits, fhfaPacificLimits } = await getOverlayIndex();
+    const { lmiEntries, usdaEntries, firstHomeLimits, fhfaPacificLimits, idahoMrbLimits } = await getOverlayIndex();
     const stateFips = STATE_FIPS[String(state ?? "OR").toUpperCase()] ?? "41";
     const enriched = all.map((listing) => {
       const longitude = Number(listing.longitude);
@@ -439,6 +503,7 @@ export async function buildOverlaySets(listings, state) {
       const firstHome = getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips);
       const fhfaCountyLimit = getFhfaCountyLimitReview(listing, state, fhfaPacificLimits);
       const calhfaMyHome = getCalhfaMyHomePropertyReview(listing, state);
+      const idahoMrbTaxExempt = getIdahoMrbTaxExemptReview(listing, state, idahoMrbLimits);
       const lakeviewNational = getLakeviewNationalReviewScreening(listing, state, fhfaPacificLimits);
       return {
         ...listing,
@@ -449,6 +514,7 @@ export async function buildOverlaySets(listings, state) {
           firstHome,
           fhfaCountyLimit,
           calhfaMyHome,
+          idahoMrbTaxExempt,
           lakeviewNational,
         },
       };

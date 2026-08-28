@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { buildOverlaySets, buildProgramReviewSets, getCalhfaMyHomePropertyReview, getFhfaCountyLimitReview, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
+import { buildOverlaySets, buildProgramReviewSets, getCalhfaMyHomePropertyReview, getFhfaCountyLimitReview, getFirstHomeScreening, getIdahoMrbTaxExemptReview, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseIdahoMrbTaxExemptSalesPriceLimits, parseLmiTractLookup } from "./overlay-classification.js";
 
 test("parses the project's single-quoted LMI tract lookup", () => {
   const lookup = parseLmiTractLookup(`
@@ -174,6 +175,38 @@ test("provides CalHFA MyHome property context without inventing a California pri
   assert.equal(duplex.reviewReady, false);
   assert.match(duplex.reason, /one-unit/);
   assert.equal(oregon.available, false);
+});
+
+test("parses the authorized 2026 IHFA Tax-Exempt county limits and screens listed price only", async () => {
+  const source = await readFile(new URL("../data/idaho_housing_mrb_tax_exempt_sales_price_limits_2026.json", import.meta.url), "utf8");
+  const limits = parseIdahoMrbTaxExemptSalesPriceLimits(source);
+  assert.equal(limits.counties.size, 44);
+  assert.equal(limits.counties.get("ada").salesPriceLimit, 613662);
+  assert.equal(limits.counties.get("lincoln").targetedStatus, "targeted");
+  const review = getIdahoMrbTaxExemptReview({ state: "ID", county: "Ada County", formattedAddress: "1 Main St", latitude: 43.6, longitude: -116.2, price: 613662 }, "ID", limits);
+  const over = getIdahoMrbTaxExemptReview({ state: "ID", county: "Ada", formattedAddress: "2 Main St", latitude: 43.6, longitude: -116.2, price: 613663 }, "ID", limits);
+  assert.equal(review.reviewReady, true);
+  assert.equal(review.priceScreenApplied, true);
+  assert.equal(over.reviewReady, false);
+  assert.match(review.reason, /Tax-Exempt\/MRB sales-price review limit/);
+});
+
+test("carries authorized IHFA review metadata through the shared saved-list pipeline", async () => {
+  const overlays = await buildOverlaySets([{
+    state: "ID",
+    county: "Ada County",
+    formattedAddress: "1 Main St, Boise, ID",
+    latitude: 43.615,
+    longitude: -116.202,
+    price: 613662,
+    propertyType: "Single Family",
+  }], "ID");
+  const review = overlays.all[0].overlayEligibility.idahoMrbTaxExempt;
+  const programSets = buildProgramReviewSets(overlays.all);
+  assert.equal(review.reviewReady, true);
+  assert.equal(review.salesPriceLimit, 613662);
+  assert.equal(review.targetedStatus, "non_targeted");
+  assert.equal(programSets.idahoMrbTaxExempt.length, 1);
 });
 
 test("includes only explicitly supported one-to-four-unit stick-built categories and excludes manufactured homes", () => {

@@ -213,12 +213,14 @@
                             <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
                             <option value="fhfaCountyLimit">FHFA 2026: county listing-price review</option>
                             <option value="calhfaMyHome">CalHFA MyHome: property context review</option>
+                            <option value="idahoMrbTaxExempt">Idaho Housing: Tax-Exempt/MRB price review</option>
                             <option value="lakeviewNational">Lakeview National: Oregon + Washington review screen</option>
                         </select>
                         <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
                         <p class="rounded-lg border border-sky-900/70 bg-sky-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-sky-200">Lakeview National is a listing-review screen only. It does not verify income, credit, AUS, DTI, LTV/CLTV, occupancy, program availability, property eligibility, or underwriting.</p>
                         <p id="fhfaCountyLimitDisclosure" class="hidden rounded-lg border border-violet-900/70 bg-violet-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-violet-200">FHFA county review is a 2026 listed-price context only. It is not a loan amount, property eligibility, borrower qualification, rate, or approval decision.</p>
                         <p id="calhfaMyHomeDisclosure" class="hidden rounded-lg border border-amber-900/70 bg-amber-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-amber-100">CalHFA MyHome property context is limited to California one-unit listing categories published by CalHFA. It has no general sales-price cap and does not determine income, first-time status, occupancy, counseling, lender approval, or eligibility.</p>
+                        <p id="idahoMrbTaxExemptDisclosure" class="hidden rounded-lg border border-emerald-900/70 bg-emerald-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-emerald-100">Idaho Housing Tax-Exempt/MRB review uses the authorized 2026 county listed-price chart only. It does not verify income, first-time status, targeted-area qualification, property eligibility, occupancy, lender requirements, underwriting, or approval.</p>
                         <div id="lakeviewPriceCapControls" class="hidden rounded-lg border border-sky-900/70 bg-slate-950/70 p-2.5 space-y-2">
                             <div class="flex items-start justify-between gap-2"><span id="lakeviewPriceCapTitle" class="text-[11px] font-semibold text-sky-200">Oregon listing-price review caps</span><button id="btnResetLakeviewPriceCap" type="button" class="shrink-0 text-[10px] font-semibold text-sky-300 hover:text-sky-100">Reset</button></div>
                             <div id="lakeviewLocalCapSliders">
@@ -1174,6 +1176,10 @@ function calhfaMyHomeListingPasses(listing) {
     return listing?.overlayEligibility?.calhfaMyHome?.reviewReady === true;
 }
 
+function idahoMrbTaxExemptListingPasses(listing) {
+    return listing?.overlayEligibility?.idahoMrbTaxExempt?.reviewReady === true;
+}
+
 function syncLakeviewPriceCapControls(pull = null) {
     const controls = document.getElementById('lakeviewPriceCapControls');
     if (!controls) return;
@@ -1311,6 +1317,10 @@ async function loadFirstHomeLimits() {
                 const calhfaMarkup = calhfaMyHome?.available
                     ? `<div style="margin-top: 8px; border-top: 1px solid #fef3c7; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${calhfaMyHome.reviewReady ? '#fef3c7' : '#f1f5f9'}; color:${calhfaMyHome.reviewReady ? '#92400e' : '#475569'}; padding:3px 7px; font-size:11px; font-weight:700;">CalHFA MyHome property context</span><br><span style="color:#334155; font-size:10px; font-weight:700;">${escapeHtml(String(calhfaMyHome.propertyType || 'Property type'))} · ${escapeHtml(String(calhfaMyHome.unitCount || '—'))}-unit</span><br><span style="color:#64748b; font-size:10px;">${escapeHtml(calhfaMyHome.reason || 'CalHFA MyHome review context unavailable.')}</span><br><span style="color:#64748b; font-size:10px;">Review only — CalHFA publishes no general sales-price limit; this is not a borrower qualification or approval decision.</span></div>`
                     : '';
+                const idahoMrbTaxExempt = listing.overlayEligibility?.idahoMrbTaxExempt;
+                const idahoMrbMarkup = idahoMrbTaxExempt?.available
+                    ? `<div style="margin-top: 8px; border-top: 1px solid #d1fae5; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${idahoMrbTaxExempt.reviewReady ? '#d1fae5' : '#fef2f2'}; color:${idahoMrbTaxExempt.reviewReady ? '#065f46' : '#b91c1c'}; padding:3px 7px; font-size:11px; font-weight:700;">Idaho Housing Tax-Exempt/MRB price review</span><br><span style="color:#334155; font-size:10px; font-weight:700;">${escapeHtml(idahoMrbTaxExempt.county || 'County')} County · ${idahoMrbTaxExempt.targetedStatus === 'targeted' ? 'Targeted' : 'Non-targeted'} chart row · ${formatFirstHomeDollars(idahoMrbTaxExempt.salesPriceLimit)}</span><br><span style="color:#64748b; font-size:10px;">Chart effective ${escapeHtml(String(idahoMrbTaxExempt.sourceEffectiveDate || '2026-05-06'))}; revised ${escapeHtml(String(idahoMrbTaxExempt.sourceRevisionDate || '2026-06-03'))}.</span><br><span style="color:#64748b; font-size:10px;">${escapeHtml(idahoMrbTaxExempt.reason || 'Idaho MRB review context unavailable.')}</span><br><span style="color:#64748b; font-size:10px;">Review only — listed price does not establish income, first-time status, targeted-area qualification, property eligibility, or approval.</span></div>`
+                    : '';
                 
                 // Listing agent info
                 const agent = listing.listingAgent || {};
@@ -1379,6 +1389,7 @@ async function loadFirstHomeLimits() {
                             ${firstHomeMarkup}
                             ${fhfaMarkup}
                             ${calhfaMarkup}
+                            ${idahoMrbMarkup}
                             ${lakeviewMarkup}
                             
                             <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
@@ -1457,6 +1468,7 @@ async function loadFirstHomeLimits() {
         syncLakeviewPriceCapControls(pull);
         document.getElementById('fhfaCountyLimitDisclosure')?.classList.toggle('hidden', overlay !== 'fhfaCountyLimit');
         document.getElementById('calhfaMyHomeDisclosure')?.classList.toggle('hidden', overlay !== 'calhfaMyHome');
+        document.getElementById('idahoMrbTaxExemptDisclosure')?.classList.toggle('hidden', overlay !== 'idahoMrbTaxExempt');
         if (!pull) return;
         const listings = overlay === 'firstHome'
             ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
@@ -1466,8 +1478,10 @@ async function loadFirstHomeLimits() {
                     ? (pull.overlaySets?.all || []).filter(fhfaCountyLimitListingPasses)
                     : overlay === 'calhfaMyHome'
                         ? (pull.overlaySets?.all || []).filter(calhfaMyHomeListingPasses)
+                        : overlay === 'idahoMrbTaxExempt'
+                            ? (pull.overlaySets?.all || []).filter(idahoMrbTaxExemptListingPasses)
                     : (pull.overlaySets?.[overlay] || []);
-        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', fhfaCountyLimit: 'FHFA 2026 county listing-price reviewed', calhfaMyHome: 'CalHFA MyHome property-context reviewed', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
+        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', fhfaCountyLimit: 'FHFA 2026 county listing-price reviewed', calhfaMyHome: 'CalHFA MyHome property-context reviewed', idahoMrbTaxExempt: 'Idaho Housing Tax-Exempt/MRB county price reviewed', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
         displayListingsOnMap(listings);

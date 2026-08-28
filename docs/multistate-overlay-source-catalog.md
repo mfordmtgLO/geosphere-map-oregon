@@ -30,12 +30,12 @@ The Lakeview National review overlay can use the FHFA’s 2026 Washington **coun
 
 Idaho Housing states that its assistance can be up to 8% of the sales price and that household income must be at or below $170,000, with program-specific variations. It directs partners to a county income-and-sales-price chart. Income, residency, credit and employment history, homebuyer education, borrower funds, and final product eligibility are not screenable from a Rentcast listing. Before adding an Idaho Housing price screen, GeoSphere must obtain and version the current official county sales-price chart rather than infer a cap from assistance percentages or conforming limits.
 
-For the First Loan Tax-Exempt / Mortgage Revenue Bond program, Idaho Housing’s March 2026 bulletin confirms that both income and sales-price limits are county-specific and directs participating lenders to the current chart. The current county matrix is maintained in the secured Lender Connection portal or released to approved lenders through internal bulletins. Its statutory methodology—90% of the area median purchase price, or 110% in federally designated targeted areas—does not provide a safe substitute for the actual dated county matrix. GeoSphere must therefore keep Idaho MRB/Tax-Exempt price filtering disabled until an authorized current source file is supplied, recorded by effective date, and validated against its stated county/targeted-area scope.
+For the First Loan Tax-Exempt / Mortgage Revenue Bond program, the authorized IHFA Program Bulletin 2026-6 and linked [Income Limits for First Loan — Tax-Exempt Only chart](https://mediaserve.ihfa.org/?q=377) confirm that both income and sales-price limits are county-specific. The chart’s sales-price rows are effective **May 6, 2026**, with a stated revision date of **June 3, 2026**; the bulletin states that new limits apply to reservations on or after May 1, 2026. GeoSphere stores the 44 county sales-price rows and their targeted/non-targeted chart label as a versioned review dataset. Its statutory methodology—90% of the area median purchase price, or 110% in federally designated targeted areas—does not provide a safe substitute for the actual dated county matrix. The map does not determine a borrower’s income, first-time status, targeted-area qualification, property eligibility, occupancy, lender requirements, underwriting, or approval.
 
 | Data family | Official source | Property-screenable data | Non-screenable conditions | Current implementation status |
 |---|---|---|---|---|
 | Idaho Housing DPA | [Idaho Housing DPA information](https://www.idahohousing.com/homebuyers/down-payment-closing-cost-assistance/) | Listing price only, if paired with an authoritative current cap | Income, funds, education, credit, residency, product approval | Conditional: public page contains no county sales-price data. |
-| Idaho Housing income and sales-price guidance | [Idaho Housing income limits](https://www.idahohousing.com/partners/lenders-realtors/borrower-income-limits/) | County price data only after the referenced official chart is retrieved and reviewed | Income, credit, employment, education, residency and underwriting | Research-required: source chart must be captured and versioned. |
+| Idaho Housing First Loan Tax-Exempt/MRB | [IHFA 2026 Tax-Exempt county chart](https://mediaserve.ihfa.org/?q=377) | County listed price at/below the dated chart value, with chart-row targeted/non-targeted context | Income, credit, employment, education, residency, first-time status, targeted-area qualification, property eligibility, occupancy, underwriting and approval | Active as a May 6, 2026 source-versioned review adapter only. |
 
 ## California housing-program source findings
 
@@ -76,7 +76,7 @@ The shared engine must treat a program overlay as a versioned **review adapter**
 |---|---|---|---|---|
 | Oregon | Complete 2026 FHFA county data; all counties use the baseline shown in the source | Existing owner-authorized review configuration | FirstHome source versioned separately | Preserve current behavior while migrating to shared adapter. |
 | Washington | Complete 2026 FHFA county data, including county-specific values | Owner requested review configuration; show source-derived county/unit cap and require product-matrix confirmation | House Key price rules available only in a dated announcement; manual verification required | Enable Lakeview county-cap review and retain the matrix-confirmation disclosure. |
-| Idaho | Complete 2026 FHFA county data available for future adapter | Not enabled pending product-matrix confirmation | Idaho Housing references a county sales-price chart that must be retrieved and versioned | Add data adapter but keep state/program screen disabled. |
+| Idaho | Complete 2026 FHFA county data available for future adapter | Not enabled pending product-matrix confirmation | Authorized IHFA Tax-Exempt/MRB chart versioned, effective May 6, 2026 | Show the county listed-price review with the mandatory non-eligibility disclosure; refresh when IHFA replaces the chart. |
 | California | Complete 2026 FHFA county data available for future adapter | Not enabled pending product-matrix confirmation | CalHFA states that it has no general sales-price limit | Add information adapter only; do not manufacture a CalHFA price cap. |
 
 ## References
@@ -104,3 +104,5 @@ The shared engine must treat a program overlay as a versioned **review adapter**
 [11] [FFIEC Census and Demographic Data Overview](https://www.ffiec.gov/data/census/overview), accessed 2026-08-28.
 
 [12] [2026 FFIEC Census Tract List](https://www.ffiec.gov/sites/default/files/data/census/CensusTractList2026.xlsx), accessed 2026-08-28.
+
+[13] [Idaho Housing Tax-Exempt First Loan Income and Sales Price Limits](https://mediaserve.ihfa.org/?q=377), chart effective 2026-05-06 and revised 2026-06-03; accessed 2026-08-28.

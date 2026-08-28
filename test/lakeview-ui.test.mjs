@@ -60,3 +60,11 @@ test("exposes CalHFA MyHome property context without inventing a sales-price or 
   assert.match(html, /CalHFA publishes no general sales-price limit/);
   assert.match(html, /not a borrower qualification or approval decision/);
 });
+
+test("exposes the authorized Idaho MRB county chart as a review-only saved-list screen", () => {
+  assert.match(html, /value="idahoMrbTaxExempt">Idaho Housing: Tax-Exempt\/MRB price review/);
+  assert.match(html, /function idahoMrbTaxExemptListingPasses\(listing\)/);
+  assert.match(html, /authorized 2026 county listed-price chart only/);
+  assert.match(html, /Idaho Housing Tax-Exempt\/MRB price review/);
+  assert.match(html, /does not establish income, first-time status, targeted-area qualification, property eligibility, or approval/);
+});
