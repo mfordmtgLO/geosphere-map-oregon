@@ -14,7 +14,7 @@
 - [x] Add regression coverage, verify the existing dashboard sync contract, and publish the GeoSphere update
 - [x] Define Lakeview National qualifying-listing rules against Rentcast sale-listing data and preserve them in the saved-list database
 - [x] Add a Lakeview National saved-list overlay with tags, pins, and full property/listing-agent popup details
-- [ ] Add Lakeview National selection to the saved-list export flow, validate the feature, and publish the GeoSphere update
+- [x] Add Lakeview National selection to the saved-list export flow, validate the feature, and publish the GeoSphere update
 - [x] Ground Lakeview National screening criteria, limitations, and map/export disclosure copy in the official product guidelines
 - [x] Implement Option A only: active Oregon sale listings with usable map data, clearly labeled for Lakeview National review rather than approved or qualified
 - [x] Verify the current official FHFA conventional county-loan-limit source and apply it only as an annual-adjustable Lakeview National listing-price review cap
