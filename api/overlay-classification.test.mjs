@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOverlaySets, getFirstHomeScreening, isUsdaEligibleOutsideIneligibleAreas, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
+import { buildOverlaySets, buildProgramReviewSets, getFirstHomeScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
 
 test("parses the project's single-quoted LMI tract lookup", () => {
   const lookup = parseLmiTractLookup(`
@@ -86,4 +86,26 @@ test("adds FirstHome metadata without changing the existing dashboard sync overl
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.areaType, "targeted");
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.priceLimit, 692211);
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.priceEligible, true);
+});
+
+test("marks only map-ready Oregon sale listings for Lakeview National review without implying qualification", () => {
+  assert.deepEqual(getLakeviewNationalReviewScreening({ state: "OR", formattedAddress: "123 Main St", latitude: 44.1, longitude: -123.1 }, "OR"), {
+    available: true,
+    reviewReady: true,
+    screenVersion: "rentcast-active-sale-oregon-v1",
+    reason: "Active Oregon sale listing with usable map data.",
+  });
+  assert.equal(getLakeviewNationalReviewScreening({ state: "WA", formattedAddress: "123 Main St", latitude: 47.6, longitude: -122.3 }, "WA").reviewReady, false);
+  assert.equal(getLakeviewNationalReviewScreening({ state: "OR", formattedAddress: "123 Main St" }, "OR").reviewReady, false);
+});
+
+test("derives a separate Lakeview National exportable review set while preserving the legacy overlay-set names", async () => {
+  const overlaySets = await buildOverlaySets([
+    { id: "map-ready", state: "OR", county: "Coos", city: "Coos Bay", formattedAddress: "1 Bay Ave", price: 400000, latitude: 43.36, longitude: -124.21 },
+    { id: "missing-coordinates", state: "OR", county: "Coos", city: "Coos Bay", formattedAddress: "2 Bay Ave", price: 400000 },
+  ], "OR");
+  assert.deepEqual(Object.keys(overlaySets).sort(), ["all", "lmi", "lmiUsda", "usda"]);
+  const programReviewSets = buildProgramReviewSets(overlaySets.all);
+  assert.deepEqual(programReviewSets.lakeviewNational.map((listing) => listing.id), ["map-ready"]);
+  assert.equal(programReviewSets.lakeviewNational[0].overlayEligibility.lakeviewNational.reviewReady, true);
 });

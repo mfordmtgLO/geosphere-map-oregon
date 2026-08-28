@@ -185,6 +185,33 @@ function getOverlayIndex() {
 
 const STATE_FIPS = { OR: "41", WA: "53", CA: "06", ID: "16" };
 
+/**
+ * Lakeview's published requirements are largely borrower and underwriting
+ * criteria. Rentcast cannot evaluate those fields, so this is deliberately a
+ * map-readiness review screen, never a qualification or approval result.
+ */
+export function getLakeviewNationalReviewScreening(listing, requestedState) {
+  const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
+  const hasAddress = Boolean(String(listing?.formattedAddress ?? listing?.address ?? "").trim());
+  const hasCoordinates = Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude));
+  const available = state === "OR";
+  return {
+    available,
+    reviewReady: available && hasAddress && hasCoordinates,
+    screenVersion: "rentcast-active-sale-oregon-v1",
+    reason: available
+      ? (hasAddress && hasCoordinates ? "Active Oregon sale listing with usable map data." : "Oregon listing needs an address and map coordinates for review.")
+      : "Lakeview National review screen is currently configured for Oregon saved listings only.",
+  };
+}
+
+export function buildProgramReviewSets(listings) {
+  const all = Array.isArray(listings) ? listings : [];
+  return {
+    lakeviewNational: all.filter((listing) => listing?.overlayEligibility?.lakeviewNational?.reviewReady === true),
+  };
+}
+
 export function getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips) {
   const countyLimit = stateFips === "41" ? firstHomeLimits.counties.get(normalizeAreaName(listing.county)) : null;
   if (!countyLimit) {
@@ -230,6 +257,7 @@ export async function buildOverlaySets(listings, state) {
       const lmi = Boolean(lmiEntry);
       const usda = hasCoordinates && isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips);
       const firstHome = getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips);
+      const lakeviewNational = getLakeviewNationalReviewScreening(listing, state);
       return {
         ...listing,
         overlayEligibility: {
@@ -237,6 +265,7 @@ export async function buildOverlaySets(listings, state) {
           usda,
           usdaInterpretation: "outside-ineligible-v1",
           firstHome,
+          lakeviewNational,
         },
       };
     });

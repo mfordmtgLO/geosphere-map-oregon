@@ -1,6 +1,6 @@
 // RENTCAST PROXY V13 - LIVE PULL + SAVED SNAPSHOT EXPORT
 import { kv } from '@vercel/kv';
-import { buildOverlaySets } from './overlay-classification.js';
+import { buildOverlaySets, buildProgramReviewSets } from './overlay-classification.js';
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
@@ -80,6 +80,7 @@ export default async function handler(req, res) {
         
         const savedAt = Date.now();
         const overlaySets = await buildOverlaySets(filtered, state);
+        const programReviewSets = buildProgramReviewSets(overlaySets.all);
         const result = {
             version: 2,
             snapshotId: `${cacheKey}:${savedAt}`,
@@ -89,6 +90,7 @@ export default async function handler(req, res) {
             totalFetched: allListings.length,
             listings: overlaySets.all,
             overlaySets,
+            programReviewSets,
             savedAt,
             cachedAt: savedAt
         };

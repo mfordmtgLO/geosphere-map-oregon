@@ -211,8 +211,10 @@
                             <option value="usda">USDA RD eligible listings</option>
                             <option value="lmiUsda">LMI + USDA RD eligible listings</option>
                             <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
+                            <option value="lakeviewNational">Lakeview National: Oregon review screen</option>
                         </select>
                         <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
+                        <p class="rounded-lg border border-sky-900/70 bg-sky-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-sky-200">Lakeview National is a listing-review screen only. It does not verify income, credit, AUS, DTI, LTV/CLTV, occupancy, program availability, property eligibility, or underwriting.</p>
                     </div>
                     
                     <input type="text" id="searchInput" placeholder="e.g., address, city, county" 
@@ -1070,8 +1072,32 @@ function toggleUSDALayer(checked) {
 let firstHomeLimitData = null;
 const FIRST_HOME_OVERRIDE_STORAGE_KEY = 'geosphere-firsthome-limit-review-v1';
 
-function formatFirstHomeDollars(value) {
+    function formatFirstHomeDollars(value) {
     return Number.isFinite(Number(value)) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(value)) : 'Not applicable';
+}
+
+function safeExternalHttpUrl(value) {
+    try {
+        const parsed = new URL(String(value || ''));
+        return ['http:', 'https:'].includes(parsed.protocol) ? parsed.href : '';
+    } catch {
+        return '';
+    }
+}
+
+function safePhoneHref(value) {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits ? `tel:${digits}` : '';
+}
+
+function safeMailHref(value) {
+    const email = String(value || '').trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? `mailto:${email}` : '';
+}
+
+function renderFullRentcastRecord(listing) {
+    const json = escapeHtml(JSON.stringify(listing, null, 2));
+    return `<details style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px;"><summary style="cursor:pointer; color:#334155; font-size:12px; font-weight:700;">Rentcast property record</summary><p style="margin:5px 0 0; color:#64748b; font-size:10px;">Full data returned with this saved listing, including available listing-agent fields.</p><pre style="max-height:220px; overflow:auto; margin:6px 0 0; padding:8px; white-space:pre-wrap; overflow-wrap:anywhere; border-radius:6px; background:#f8fafc; color:#334155; font-size:10px;">${json}</pre></details>`;
 }
 
 function getFirstHomeOverrides() {
@@ -1171,9 +1197,12 @@ async function loadFirstHomeLimits() {
                 const mls = listing.mlsNumber || '';
                 const mlsName = listing.mlsName || '';
                 const firstHome = getEffectiveFirstHomeScreening(listing);
+                const lakeviewNational = listing?.overlayEligibility?.lakeviewNational;
+                const lakeviewReviewReady = lakeviewNational?.reviewReady === true;
                 const firstHomeMarkup = firstHome?.available
                     ? `<div style="margin-top: 8px; border-top: 1px solid #d1fae5; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${firstHome.lmiEligible ? '#dcfce7' : firstHome.priceEligible === false ? '#fee2e2' : '#fef3c7'}; color:${firstHome.lmiEligible ? '#166534' : firstHome.priceEligible === false ? '#b91c1c' : '#92400e'}; padding:3px 7px; font-size:11px; font-weight:700;">OHCS FirstHome ${firstHome.lmiEligible ? 'price screen met' : firstHome.priceEligible === false ? 'over purchase-price limit' : 'screening review needed'}</span><br><span style="color:#334155; font-size:12px; font-weight:600;">${firstHome.areaType === 'targeted' ? 'Targeted area' : 'Non-targeted area'} · limit ${formatFirstHomeDollars(firstHome.priceLimit)}${firstHome.localOverride ? ' (local review value)' : ''}</span><br><span style="color:#64748b; font-size:10px;">${firstHome.targetedAreaDetails || 'Confirm FirstHome area and program requirements with OHCS.'}</span></div>`
                     : `<div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; color:#64748b; font-size:11px;">OHCS FirstHome limit: not applicable or unavailable for this saved listing’s county.</div>`;
+                const lakeviewMarkup = `<div style="margin-top: 8px; border-top: 1px solid #dbeafe; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${lakeviewReviewReady ? '#e0f2fe' : '#f1f5f9'}; color:${lakeviewReviewReady ? '#075985' : '#475569'}; padding:3px 7px; font-size:11px; font-weight:700;">Lakeview National ${lakeviewReviewReady ? 'review screen' : 'review unavailable'}</span><br><span style="color:#64748b; font-size:10px;">${escapeHtml(lakeviewNational?.reason || 'Lakeview National review metadata is unavailable for this saved listing.')}</span><br><span style="color:#64748b; font-size:10px;">Review only — borrower and underwriting criteria require separate verification.</span></div>`;
                 
                 // Listing agent info
                 const agent = listing.listingAgent || {};
@@ -1181,6 +1210,9 @@ async function loadFirstHomeLimits() {
                 const agentPhone = agent.phone || '';
                 const agentEmail = agent.email || '';
                 const agentWebsite = agent.website || '';
+                const agentPhoneHref = safePhoneHref(agentPhone);
+                const agentEmailHref = safeMailHref(agentEmail);
+                const agentWebsiteHref = safeExternalHttpUrl(agentWebsite);
                 
                 // Build Zillow link
                 const zillowAddress = encodeURIComponent(address);
@@ -1196,13 +1228,13 @@ async function loadFirstHomeLimits() {
                         <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
                             <div style="
                                 background: rgba(15, 23, 42, 0.95);
-                                color: #22c55e;
+                                color: ${lakeviewReviewReady ? '#38bdf8' : '#22c55e'};
                                 font-size: 12px;
                                 font-weight: 700;
                                 font-family: system-ui, sans-serif;
                                 padding: 3px 8px;
                                 border-radius: 6px;
-                                border: 1.5px solid #22c55e;
+                                border: 1.5px solid ${lakeviewReviewReady ? '#38bdf8' : '#22c55e'};
                                 white-space: nowrap;
                                 box-shadow: 0 2px 8px rgba(0,0,0,0.5);
                                 margin-bottom: 2px;
@@ -1210,7 +1242,7 @@ async function loadFirstHomeLimits() {
                             <div style="
                                 width: 12px;
                                 height: 12px;
-                                background: #4f46e5;
+                                background: ${lakeviewReviewReady ? '#0284c7' : '#4f46e5'};
                                 border: 2px solid white;
                                 border-radius: 50%;
                                 box-shadow: 0 2px 6px rgba(0,0,0,0.5);
@@ -1218,7 +1250,7 @@ async function loadFirstHomeLimits() {
                             <div style="
                                 width: 2px;
                                 height: 8px;
-                                background: #4f46e5;
+                                background: ${lakeviewReviewReady ? '#0284c7' : '#4f46e5'};
                             "></div>
                         </div>
                     `,
@@ -1231,20 +1263,22 @@ async function loadFirstHomeLimits() {
                     .bindPopup(`
                         <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px; color: #1e293b;">
                             <strong style="color: #059669; font-size: 16px; font-weight: 700;">${price}</strong><br>
-                            <span style="color: #334155; font-size: 12px; font-weight: 600;">${beds} bed · ${baths} bath${sqft ? ' · ' + sqft : ''} · Built ${yearBuilt}</span><br>
-                            <span style="color: #334155; font-size: 12px; font-weight: 600;">Days on Market: <strong style="font-weight: 700; color: #1e293b;">${daysOnMarket}</strong></span><br>
-                            <span style="color: #1e293b; font-size: 12px; font-weight: 600;">${address}</span><br>
-                            <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${propType}</span>
-                            ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${mls}</span>${mlsName ? ' (' + mlsName + ')' : ''}</span>` : ''}
+                            <span style="color: #334155; font-size: 12px; font-weight: 600;">${escapeHtml(String(beds))} bed · ${escapeHtml(String(baths))} bath${sqft ? ' · ' + escapeHtml(String(sqft)) : ''} · Built ${escapeHtml(String(yearBuilt))}</span><br>
+                            <span style="color: #334155; font-size: 12px; font-weight: 600;">Days on Market: <strong style="font-weight: 700; color: #1e293b;">${escapeHtml(String(daysOnMarket))}</strong></span><br>
+                            <span style="color: #1e293b; font-size: 12px; font-weight: 600;">${escapeHtml(String(address))}</span><br>
+                            <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${escapeHtml(String(propType))}</span>
+                            ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${escapeHtml(String(mls))}</span>${mlsName ? ' (' + escapeHtml(String(mlsName)) + ')' : ''}</span>` : ''}
                             ${firstHomeMarkup}
+                            ${lakeviewMarkup}
                             
                             <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
                                 <span style="color: #1e293b; font-size: 12px; font-weight: 700;">Listing Agent</span><br>
-                                <span style="color: #334155; font-size: 12px; font-weight: 600;">${agentName}</span>
-                                ${agentPhone ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">📞 <a href="tel:${agentPhone}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${agentPhone}</a></span>` : ''}
-                                ${agentEmail ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">✉️ <a href="mailto:${agentEmail}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${agentEmail}</a></span>` : ''}
-                                ${agentWebsite ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">🌐 <a href="${agentWebsite}" target="_blank" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Website</a></span>` : ''}
+                                <span style="color: #334155; font-size: 12px; font-weight: 600;">${escapeHtml(String(agentName))}</span>
+                                ${agentPhoneHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">📞 <a href="${agentPhoneHref}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${escapeHtml(String(agentPhone))}</a></span>` : ''}
+                                ${agentEmailHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">✉️ <a href="${agentEmailHref}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${escapeHtml(String(agentEmail))}</a></span>` : ''}
+                                ${agentWebsiteHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">🌐 <a href="${escapeHtml(agentWebsiteHref)}" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Website</a></span>` : ''}
                             </div>
+                            ${renderFullRentcastRecord(listing)}
                             
                             <div style="margin-top: 8px;">
                                 <a href="${zillowUrl}" target="_blank" 
@@ -1313,8 +1347,10 @@ async function loadFirstHomeLimits() {
         if (!pull) return;
         const listings = overlay === 'firstHome'
             ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
-            : (pull.overlaySets?.[overlay] || []);
-        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened' }[overlay] || overlay;
+            : overlay === 'lakeviewNational'
+                ? (pull.programReviewSets?.lakeviewNational || [])
+                : (pull.overlaySets?.[overlay] || []);
+        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
         displayListingsOnMap(listings);
