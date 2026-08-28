@@ -23,7 +23,8 @@
 - [x] Use separate annual-adjustable Oregon listing-price proxy caps for one-, two-, three-, and four-unit Lakeview review listings
 - [x] Verify and store 2026 FHFA county-specific Washington conforming limits for the Lakeview National review overlay
 - [x] Add Washington county-aware Lakeview review controls, map/popup cap context, saved-list metadata, export treatment, validation, and publication
-- [ ] Refactor Oregon program overlays into a reusable multi-state state, county, and program review framework
-- [ ] Catalog authoritative current overlay, geographic eligibility, and annual price-limit data for Oregon, Washington, Idaho, and California
+- [x] Refactor Oregon program overlays into a reusable multi-state state, county, and program review framework
+- [x] Catalog authoritative current overlay, geographic eligibility, and annual price-limit data for Oregon, Washington, Idaho, and California
 - [ ] Add only verified Washington, Idaho, and California program review overlays, local annual controls, popup context, and saved-list export treatment
-- [ ] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements
+- [x] Add a reusable FHFA 2026 county-and-unit listing-price review overlay across Oregon, Washington, Idaho, and California without implying a conforming loan approval
+- [x] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements

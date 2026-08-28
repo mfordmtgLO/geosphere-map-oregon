@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOverlaySets, buildProgramReviewSets, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
+import { buildOverlaySets, buildProgramReviewSets, getFhfaCountyLimitReview, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
 
 test("parses the project's single-quoted LMI tract lookup", () => {
   const lookup = parseLmiTractLookup(`
@@ -147,6 +147,22 @@ test("applies the bundled FHFA Washington county cap in the saved-list pipeline"
   assert.equal(screening.countyFips, "53033");
   assert.equal(screening.defaultListingPriceCap, 1063750);
   assert.equal(buildProgramReviewSets(overlaySets.all).lakeviewNational[0].id, "king-exact-cap");
+});
+
+test("provides a multi-state FHFA county price review context without implying a loan decision", () => {
+  const limits = parseFhfaPacificCountyLimits(JSON.stringify({
+    states: {
+      ID: { counties: [{ county: "TETON", fips: "16081", caps: { 1: 1249125, 2: 1599375, 3: 1933200, 4: 2402625 } }] },
+      CA: { counties: [{ county: "LOS ANGELES", fips: "06037", caps: { 1: 1249125, 2: 1599375, 3: 1933200, 4: 2402625 } }] },
+    },
+  }));
+  const idaho = getFhfaCountyLimitReview({ state: "ID", county: "Teton County", propertyType: "Duplex", price: 1599375 }, "ID", limits);
+  const california = getFhfaCountyLimitReview({ state: "CA", county: "Los Angeles", propertyType: "Single Family", price: 1249126 }, "CA", limits);
+  assert.equal(idaho.reviewReady, true);
+  assert.equal(idaho.priceCap, 1599375);
+  assert.equal(california.reviewReady, false);
+  assert.equal(california.priceWithinCap, false);
+  assert.match(california.reason, /Listed price is above/);
 });
 
 test("includes only explicitly supported one-to-four-unit stick-built categories and excludes manufactured homes", () => {

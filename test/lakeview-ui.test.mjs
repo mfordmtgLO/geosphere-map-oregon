@@ -44,3 +44,11 @@ test("uses server-provided Washington county caps instead of Oregon local slider
   assert.match(html, /const isOregon = screening\.state === 'OR';/);
   assert.match(html, /Number\(screening\.defaultListingPriceCap\)/);
 });
+
+test("exposes the source-backed FHFA county review overlay without a loan-decision claim", () => {
+  assert.match(html, /value="fhfaCountyLimit">FHFA 2026: county listing-price review/);
+  assert.match(html, /function fhfaCountyLimitListingPasses\(listing\)/);
+  assert.match(html, /FHFA county review is a 2026 listed-price context only/);
+  assert.match(html, /FHFA 2026 county price review/);
+  assert.match(html, /the listed price is not a loan amount, qualification, or approval decision/);
+});

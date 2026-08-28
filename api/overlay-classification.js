@@ -239,6 +239,49 @@ function inferredUnitCount(listing, propertyType) {
   return null;
 }
 
+function inferredConformingUnitCount(listing) {
+  const propertyType = normalizedPropertyType(listing);
+  const supplied = Number(listing?.units ?? listing?.unitCount ?? listing?.numberOfUnits);
+  if (Number.isInteger(supplied) && supplied >= 1 && supplied <= 4) return supplied;
+  if (/fourplex|four[- ]unit|quadruplex/.test(propertyType)) return 4;
+  if (/triplex|three[- ]unit/.test(propertyType)) return 3;
+  if (/duplex|two[- ]unit/.test(propertyType)) return 2;
+  if (/single[- ]family|\bsfr\b|condo|condominium|townhome|townhouse|pud|manufactured|mobile/.test(propertyType)) return 1;
+  return null;
+}
+
+export function getFhfaCountyLimitReview(listing, requestedState, fhfaPacificLimits = null) {
+  const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
+  const countyLimit = fhfaPacificLimits?.states?.get(state)?.get(normalizeAreaName(listing?.county));
+  const unitCount = inferredConformingUnitCount(listing);
+  const priceCap = countyLimit?.caps?.[unitCount] ?? null;
+  const price = Number(listing?.price);
+  const hasListedPrice = Number.isFinite(price) && price > 0;
+  const priceWithinCap = hasListedPrice && Number.isFinite(priceCap) ? price <= priceCap : null;
+  const available = Boolean(countyLimit && unitCount && priceCap);
+  return {
+    available,
+    reviewReady: available && priceWithinCap === true,
+    screenVersion: "fhfa-2026-county-unit-listing-price-review-v1",
+    state,
+    county: countyLimit?.county ?? (listing?.county ? String(listing.county).trim() : null),
+    countyFips: countyLimit?.fips ?? null,
+    sourceYear: 2026,
+    unitCount,
+    priceCap,
+    priceWithinCap,
+    reason: !countyLimit
+      ? "A recognized county with an official 2026 FHFA value is required for this review context."
+      : !unitCount
+        ? "A verified one-to-four-unit property count is required for this county limit review context."
+        : !hasListedPrice
+          ? "A usable listed price is required for this county limit review context."
+          : priceWithinCap
+            ? `Listed price is at or below the 2026 FHFA ${countyLimit.county} County ${unitCount}-unit review value.`
+            : `Listed price is above the 2026 FHFA ${countyLimit.county} County ${unitCount}-unit review value.`,
+  };
+}
+
 export function getLakeviewNationalPropertyScreening(listing) {
   const propertyType = normalizedPropertyType(listing);
   const unitCount = inferredUnitCount(listing, propertyType);
@@ -314,6 +357,7 @@ export function getLakeviewNationalReviewScreening(listing, requestedState, fhfa
 export function buildProgramReviewSets(listings) {
   const all = Array.isArray(listings) ? listings : [];
   return {
+    fhfaCountyLimit: all.filter((listing) => listing?.overlayEligibility?.fhfaCountyLimit?.reviewReady === true),
     lakeviewNational: all.filter((listing) => listing?.overlayEligibility?.lakeviewNational?.reviewReady === true),
   };
 }
@@ -363,6 +407,7 @@ export async function buildOverlaySets(listings, state) {
       const lmi = Boolean(lmiEntry);
       const usda = hasCoordinates && isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips);
       const firstHome = getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips);
+      const fhfaCountyLimit = getFhfaCountyLimitReview(listing, state, fhfaPacificLimits);
       const lakeviewNational = getLakeviewNationalReviewScreening(listing, state, fhfaPacificLimits);
       return {
         ...listing,
@@ -371,6 +416,7 @@ export async function buildOverlaySets(listings, state) {
           usda,
           usdaInterpretation: "outside-ineligible-v1",
           firstHome,
+          fhfaCountyLimit,
           lakeviewNational,
         },
       };

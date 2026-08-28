@@ -211,10 +211,12 @@
                             <option value="usda">USDA RD eligible listings</option>
                             <option value="lmiUsda">LMI + USDA RD eligible listings</option>
                             <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
+                            <option value="fhfaCountyLimit">FHFA 2026: county listing-price review</option>
                             <option value="lakeviewNational">Lakeview National: Oregon + Washington review screen</option>
                         </select>
                         <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
                         <p class="rounded-lg border border-sky-900/70 bg-sky-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-sky-200">Lakeview National is a listing-review screen only. It does not verify income, credit, AUS, DTI, LTV/CLTV, occupancy, program availability, property eligibility, or underwriting.</p>
+                        <p id="fhfaCountyLimitDisclosure" class="hidden rounded-lg border border-violet-900/70 bg-violet-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-violet-200">FHFA county review is a 2026 listed-price context only. It is not a loan amount, property eligibility, borrower qualification, rate, or approval decision.</p>
                         <div id="lakeviewPriceCapControls" class="hidden rounded-lg border border-sky-900/70 bg-slate-950/70 p-2.5 space-y-2">
                             <div class="flex items-start justify-between gap-2"><span id="lakeviewPriceCapTitle" class="text-[11px] font-semibold text-sky-200">Oregon listing-price review caps</span><button id="btnResetLakeviewPriceCap" type="button" class="shrink-0 text-[10px] font-semibold text-sky-300 hover:text-sky-100">Reset</button></div>
                             <div id="lakeviewLocalCapSliders">
@@ -1162,6 +1164,10 @@ function lakeviewListingPasses(listing) {
     return getEffectiveLakeviewScreening(listing)?.reviewReady === true;
 }
 
+function fhfaCountyLimitListingPasses(listing) {
+    return listing?.overlayEligibility?.fhfaCountyLimit?.reviewReady === true;
+}
+
 function syncLakeviewPriceCapControls(pull = null) {
     const controls = document.getElementById('lakeviewPriceCapControls');
     if (!controls) return;
@@ -1291,6 +1297,10 @@ async function loadFirstHomeLimits() {
                     : `<div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 8px; color:#64748b; font-size:11px;">OHCS FirstHome limit: not applicable or unavailable for this saved listing’s county.</div>`;
                 const lakeviewUnitLabel = lakeviewNational?.property?.unitCount ? `${lakeviewNational.property.unitCount}-unit` : 'property';
                 const lakeviewMarkup = `<div style="margin-top: 8px; border-top: 1px solid #dbeafe; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${lakeviewReviewReady ? '#e0f2fe' : '#f1f5f9'}; color:${lakeviewReviewReady ? '#075985' : '#475569'}; padding:3px 7px; font-size:11px; font-weight:700;">Lakeview National ${lakeviewReviewReady ? 'review screen' : 'review unavailable'}</span><br><span style="color:#334155; font-size:10px; font-weight:700;">Selected ${escapeHtml(lakeviewUnitLabel)} listing-price review cap: ${formatFirstHomeDollars(lakeviewNational?.priceCap || LAKEVIEW_DEFAULT_PRICE_CAPS[1])}${lakeviewNational?.localReviewCap ? ' (local review value)' : ''}</span><br><span style="color:#64748b; font-size:10px;">${escapeHtml(lakeviewNational?.reason || 'Lakeview National review metadata is unavailable for this saved listing.')}</span><br><span style="color:#64748b; font-size:10px;">Review only — a listing sales price does not establish the loan amount, qualification, or approval.</span></div>`;
+                const fhfaCountyLimit = listing.overlayEligibility?.fhfaCountyLimit;
+                const fhfaMarkup = fhfaCountyLimit?.available
+                    ? `<div style="margin-top: 8px; border-top: 1px solid #ede9fe; padding-top: 8px;"><span style="display:inline-block; border-radius:999px; background:${fhfaCountyLimit.reviewReady ? '#ede9fe' : '#fef2f2'}; color:${fhfaCountyLimit.reviewReady ? '#5b21b6' : '#b91c1c'}; padding:3px 7px; font-size:11px; font-weight:700;">FHFA 2026 county price review</span><br><span style="color:#334155; font-size:10px; font-weight:700;">${escapeHtml(fhfaCountyLimit.county || 'County')} County · ${escapeHtml(String(fhfaCountyLimit.unitCount || '—'))}-unit review value: ${formatFirstHomeDollars(fhfaCountyLimit.priceCap)}</span><br><span style="color:#64748b; font-size:10px;">${escapeHtml(fhfaCountyLimit.reason || 'County review context unavailable.')}</span><br><span style="color:#64748b; font-size:10px;">Review only — the listed price is not a loan amount, qualification, or approval decision.</span></div>`
+                    : '';
                 
                 // Listing agent info
                 const agent = listing.listingAgent || {};
@@ -1357,6 +1367,7 @@ async function loadFirstHomeLimits() {
                             <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${escapeHtml(String(propType))}</span>
                             ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${escapeHtml(String(mls))}</span>${mlsName ? ' (' + escapeHtml(String(mlsName)) + ')' : ''}</span>` : ''}
                             ${firstHomeMarkup}
+                            ${fhfaMarkup}
                             ${lakeviewMarkup}
                             
                             <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
@@ -1433,13 +1444,16 @@ async function loadFirstHomeLimits() {
         const tractField = document.getElementById('formTract');
         const pull = sharedSavedPulls.find((item) => item.snapshotId === select.value);
         syncLakeviewPriceCapControls(pull);
+        document.getElementById('fhfaCountyLimitDisclosure')?.classList.toggle('hidden', overlay !== 'fhfaCountyLimit');
         if (!pull) return;
         const listings = overlay === 'firstHome'
             ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
             : overlay === 'lakeviewNational'
                 ? (pull.overlaySets?.all || []).filter(lakeviewListingPasses)
+                : overlay === 'fhfaCountyLimit'
+                    ? (pull.overlaySets?.all || []).filter(fhfaCountyLimitListingPasses)
                 : (pull.overlaySets?.[overlay] || []);
-        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
+        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', fhfaCountyLimit: 'FHFA 2026 county listing-price reviewed', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
         displayListingsOnMap(listings);
