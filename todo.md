@@ -17,3 +17,7 @@
 - [ ] Add Lakeview National selection to the saved-list export flow, validate the feature, and publish the GeoSphere update
 - [x] Ground Lakeview National screening criteria, limitations, and map/export disclosure copy in the official product guidelines
 - [x] Implement Option A only: active Oregon sale listings with usable map data, clearly labeled for Lakeview National review rather than approved or qualified
+- [x] Verify the current official FHFA conventional county-loan-limit source and apply it only as an annual-adjustable Lakeview National listing-price review cap
+- [x] Add an Oregon maximum-price slider, map/popup cap context, and Lakeview National export metadata without implying loan eligibility or a maximum loan amount
+- [x] Limit the Lakeview National review screen to for-sale, one-to-four-unit stick-built residential listings and exclude all manufactured, mobile, and land-lease homes
+- [x] Use separate annual-adjustable Oregon listing-price proxy caps for one-, two-, three-, and four-unit Lakeview review listings

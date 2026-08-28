@@ -69,10 +69,12 @@ export default async function handler(req, res) {
         }
         
         const filtered = allListings.filter(listing => {
-            if (!listing.price || listing.price < 250000 || listing.price > 800000) return false;
+            // Keep room for the 2026 four-unit high-cost ceiling in the shared
+            // cache; program review overlays apply their own lower caps.
+            if (!listing.price || listing.price < 250000 || listing.price > 2402625) return false;
             if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') return false;
             if (listing.propertyType === 'Commercial' || listing.propertyType === 'Industrial') return false;
-            if (listing.propertyType === 'Multi-Family') return false;
+            if ((listing.propertyType === 'Multi-Family' || listing.propertyType === 'Multi Family') && Number(listing.units ?? listing.unitCount ?? listing.numberOfUnits) > 4) return false;
             if ((listing.propertyType === 'Manufactured' || listing.propertyType === 'Mobile/Manufactured') 
                 && listing.landLease === true) return false;
             return true;

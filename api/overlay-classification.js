@@ -184,6 +184,50 @@ function getOverlayIndex() {
 }
 
 const STATE_FIPS = { OR: "41", WA: "53", CA: "06", ID: "16" };
+export const LAKEVIEW_NATIONAL_OREGON_2026_REVIEW_CAPS = Object.freeze({
+  1: 832750,
+  2: 1066250,
+  3: 1288800,
+  4: 1601750,
+});
+export const LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP = LAKEVIEW_NATIONAL_OREGON_2026_REVIEW_CAPS[1];
+
+function normalizedPropertyType(listing) {
+  return String(listing?.propertyType ?? listing?.propertySubType ?? "").trim().toLowerCase();
+}
+
+function inferredUnitCount(listing, propertyType) {
+  const supplied = Number(listing?.units ?? listing?.unitCount ?? listing?.numberOfUnits);
+  if (Number.isInteger(supplied) && supplied > 0) return supplied;
+  if (/fourplex|four[- ]unit|quadruplex/.test(propertyType)) return 4;
+  if (/triplex|three[- ]unit/.test(propertyType)) return 3;
+  if (/duplex|two[- ]unit/.test(propertyType)) return 2;
+  if (/single[- ]family|\bsfr\b/.test(propertyType)) return 1;
+  return null;
+}
+
+export function getLakeviewNationalPropertyScreening(listing) {
+  const propertyType = normalizedPropertyType(listing);
+  const unitCount = inferredUnitCount(listing, propertyType);
+  const manufactured = /manufactured|mobile|modular|park model|land lease/.test(propertyType) || listing?.landLease === true;
+  const explicitlyEligibleType = /single[- ]family|\bsfr\b|duplex|triplex|fourplex|two[- ]unit|three[- ]unit|four[- ]unit/.test(propertyType)
+    || (/multi[- ]family/.test(propertyType) && Number.isInteger(unitCount));
+  const oneToFourUnits = Number.isInteger(unitCount) && unitCount >= 1 && unitCount <= 4;
+  const stickBuiltOneToFour = !manufactured && explicitlyEligibleType && oneToFourUnits;
+  return {
+    propertyType: propertyType || null,
+    unitCount,
+    manufactured,
+    stickBuiltOneToFour,
+    reason: manufactured
+      ? "Manufactured, mobile, modular, or land-lease homes are excluded from this review screen."
+      : !explicitlyEligibleType
+        ? "Property type is not an explicitly supported stick-built one-to-four-unit residential category."
+        : !oneToFourUnits
+          ? "Property must have a verified one-to-four-unit count for this review screen."
+          : "Stick-built one-to-four-unit residential property screen met.",
+  };
+}
 
 /**
  * Lakeview's published requirements are largely borrower and underwriting
@@ -194,13 +238,21 @@ export function getLakeviewNationalReviewScreening(listing, requestedState) {
   const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
   const hasAddress = Boolean(String(listing?.formattedAddress ?? listing?.address ?? "").trim());
   const hasCoordinates = Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude));
+  const price = Number(listing?.price);
+  const hasListedPrice = Number.isFinite(price) && price > 0;
   const available = state === "OR";
+  const property = getLakeviewNationalPropertyScreening(listing);
+  const defaultListingPriceCap = LAKEVIEW_NATIONAL_OREGON_2026_REVIEW_CAPS[property.unitCount] ?? LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP;
+  const priceWithinDefaultCap = hasListedPrice ? price <= defaultListingPriceCap : false;
   return {
     available,
-    reviewReady: available && hasAddress && hasCoordinates,
-    screenVersion: "rentcast-active-sale-oregon-v1",
+    reviewReady: available && hasAddress && hasCoordinates && priceWithinDefaultCap && property.stickBuiltOneToFour,
+    screenVersion: "rentcast-active-sale-oregon-stick-built-one-to-four-v3",
+    defaultListingPriceCap,
+    priceWithinDefaultCap,
+    property,
     reason: available
-      ? (hasAddress && hasCoordinates ? "Active Oregon sale listing with usable map data." : "Oregon listing needs an address and map coordinates for review.")
+      ? (!hasAddress || !hasCoordinates ? "Oregon listing needs an address and map coordinates for review." : !hasListedPrice ? "Oregon listing needs a usable listed price for the review cap." : !property.stickBuiltOneToFour ? property.reason : priceWithinDefaultCap ? "Active Oregon stick-built one-to-four-unit sale listing is within the 2026 review cap." : "Listed price is above the 2026 review cap.")
       : "Lakeview National review screen is currently configured for Oregon saved listings only.",
   };
 }
