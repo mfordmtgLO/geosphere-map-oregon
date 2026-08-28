@@ -5,7 +5,7 @@ import test from "node:test";
 const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
 test("exposes Lakeview National as an explicit saved-list review selection", () => {
-  assert.match(html, /value="lakeviewNational">Lakeview National: Oregon review screen/);
+  assert.match(html, /value="lakeviewNational">Lakeview National: Oregon \+ Washington review screen/);
   assert.match(html, /Lakeview National is a listing-review screen only/);
   assert.match(html, /\(pull\.overlaySets\?\.all \|\| \[\]\)\.filter\(lakeviewListingPasses\)/);
   assert.match(html, /Lakeview National review-screened/);
@@ -36,4 +36,11 @@ test("stores distinct local annual review caps by property unit count", () => {
   assert.match(html, /geosphere-lakeview-oregon-unit-review-caps-v2/);
   assert.match(html, /function getLakeviewPriceCap\(unitCount\)/);
   assert.match(html, /function saveLakeviewPriceCap\(unitCount, value\)/);
+});
+
+test("uses server-provided Washington county caps instead of Oregon local slider values", () => {
+  assert.match(html, /const isWashington = state === 'WA';/);
+  assert.match(html, /Washington county and unit values are applied automatically/);
+  assert.match(html, /const isOregon = screening\.state === 'OR';/);
+  assert.match(html, /Number\(screening\.defaultListingPriceCap\)/);
 });

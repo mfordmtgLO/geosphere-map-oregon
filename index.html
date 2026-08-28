@@ -211,17 +211,19 @@
                             <option value="usda">USDA RD eligible listings</option>
                             <option value="lmiUsda">LMI + USDA RD eligible listings</option>
                             <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
-                            <option value="lakeviewNational">Lakeview National: Oregon review screen</option>
+                            <option value="lakeviewNational">Lakeview National: Oregon + Washington review screen</option>
                         </select>
                         <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
                         <p class="rounded-lg border border-sky-900/70 bg-sky-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-sky-200">Lakeview National is a listing-review screen only. It does not verify income, credit, AUS, DTI, LTV/CLTV, occupancy, program availability, property eligibility, or underwriting.</p>
                         <div id="lakeviewPriceCapControls" class="hidden rounded-lg border border-sky-900/70 bg-slate-950/70 p-2.5 space-y-2">
-                            <div class="flex items-start justify-between gap-2"><span class="text-[11px] font-semibold text-sky-200">Oregon listing-price review caps</span><button id="btnResetLakeviewPriceCap" type="button" class="shrink-0 text-[10px] font-semibold text-sky-300 hover:text-sky-100">Reset</button></div>
-                            <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-1" class="text-[10px] text-slate-300">1-unit</label><output id="lakeviewPriceCapValue-1" class="text-[10px] font-mono font-semibold text-sky-300">$832,750</output></div><input id="lakeviewPriceCap-1" data-lakeview-price-cap="1" type="range" min="250000" max="1249125" step="1000" value="832750" class="w-full accent-sky-400"></div>
-                            <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-2" class="text-[10px] text-slate-300">2-unit</label><output id="lakeviewPriceCapValue-2" class="text-[10px] font-mono font-semibold text-sky-300">$1,066,250</output></div><input id="lakeviewPriceCap-2" data-lakeview-price-cap="2" type="range" min="250000" max="1600000" step="1000" value="1066250" class="w-full accent-sky-400"></div>
-                            <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-3" class="text-[10px] text-slate-300">3-unit</label><output id="lakeviewPriceCapValue-3" class="text-[10px] font-mono font-semibold text-sky-300">$1,288,800</output></div><input id="lakeviewPriceCap-3" data-lakeview-price-cap="3" type="range" min="250000" max="1935000" step="1000" value="1288800" class="w-full accent-sky-400"></div>
-                            <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-4" class="text-[10px] text-slate-300">4-unit</label><output id="lakeviewPriceCapValue-4" class="text-[10px] font-mono font-semibold text-sky-300">$1,601,750</output></div><input id="lakeviewPriceCap-4" data-lakeview-price-cap="4" type="range" min="250000" max="2403000" step="1000" value="1601750" class="w-full accent-sky-400"></div>
-                            <p class="text-[10px] leading-relaxed text-slate-500">2026 FHFA/Fannie baselines. Adjust annually after official limits update; saved only in this browser. The property’s verified unit count selects its cap.</p>
+                            <div class="flex items-start justify-between gap-2"><span id="lakeviewPriceCapTitle" class="text-[11px] font-semibold text-sky-200">Oregon listing-price review caps</span><button id="btnResetLakeviewPriceCap" type="button" class="shrink-0 text-[10px] font-semibold text-sky-300 hover:text-sky-100">Reset</button></div>
+                            <div id="lakeviewLocalCapSliders">
+                                <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-1" class="text-[10px] text-slate-300">1-unit</label><output id="lakeviewPriceCapValue-1" class="text-[10px] font-mono font-semibold text-sky-300">$832,750</output></div><input id="lakeviewPriceCap-1" data-lakeview-price-cap="1" type="range" min="250000" max="1249125" step="1000" value="832750" class="w-full accent-sky-400"></div>
+                                <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-2" class="text-[10px] text-slate-300">2-unit</label><output id="lakeviewPriceCapValue-2" class="text-[10px] font-mono font-semibold text-sky-300">$1,066,250</output></div><input id="lakeviewPriceCap-2" data-lakeview-price-cap="2" type="range" min="250000" max="1600000" step="1000" value="1066250" class="w-full accent-sky-400"></div>
+                                <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-3" class="text-[10px] text-slate-300">3-unit</label><output id="lakeviewPriceCapValue-3" class="text-[10px] font-mono font-semibold text-sky-300">$1,288,800</output></div><input id="lakeviewPriceCap-3" data-lakeview-price-cap="3" type="range" min="250000" max="1935000" step="1000" value="1288800" class="w-full accent-sky-400"></div>
+                                <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-4" class="text-[10px] text-slate-300">4-unit</label><output id="lakeviewPriceCapValue-4" class="text-[10px] font-mono font-semibold text-sky-300">$1,601,750</output></div><input id="lakeviewPriceCap-4" data-lakeview-price-cap="4" type="range" min="250000" max="2403000" step="1000" value="1601750" class="w-full accent-sky-400"></div>
+                            </div>
+                            <p id="lakeviewPriceCapSourceNote" class="text-[10px] leading-relaxed text-slate-500">2026 FHFA/Fannie Oregon baselines. Adjust annually after official limits update; saved only in this browser. The property’s verified unit count selects its cap.</p>
                             <p class="text-[10px] leading-relaxed text-slate-500">This treats the listing price as the requested combined-financing review proxy only. It is not a final loan amount, qualification, or approval.</p>
                         </div>
                     </div>
@@ -1138,16 +1140,21 @@ function getEffectiveLakeviewScreening(listing) {
     const screening = listing?.overlayEligibility?.lakeviewNational;
     if (!screening?.available) return screening || null;
     const unitCount = screening?.property?.unitCount;
-    const priceCap = getLakeviewPriceCap(unitCount);
+    const isOregon = screening.state === 'OR';
+    const priceCap = isOregon ? getLakeviewPriceCap(unitCount) : Number(screening.defaultListingPriceCap);
     const price = Number(listing?.price);
     const priceEligible = Number.isFinite(price) && price > 0 && price <= priceCap;
     return {
         ...screening,
-        reviewReady: Boolean(String(listing?.formattedAddress || listing?.address || '').trim()) && Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude)) && priceEligible,
+        reviewReady: isOregon
+            ? Boolean(String(listing?.formattedAddress || listing?.address || '').trim()) && Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude)) && priceEligible && screening?.property?.stickBuiltOneToFour === true
+            : screening.reviewReady === true,
         priceCap,
         priceEligible,
-        localReviewCap: priceCap !== LAKEVIEW_DEFAULT_PRICE_CAPS[unitCount],
-        reason: priceEligible ? `Active Oregon ${unitCount}-unit stick-built sale listing is within the selected listing-price review cap.` : `Listed price is above the selected ${unitCount || 'property'}-unit listing-price review cap.`,
+        localReviewCap: isOregon && priceCap !== LAKEVIEW_DEFAULT_PRICE_CAPS[unitCount],
+        reason: isOregon
+            ? (priceEligible ? `Active Oregon ${unitCount}-unit stick-built sale listing is within the selected listing-price review cap.` : `Listed price is above the selected ${unitCount || 'property'}-unit listing-price review cap.`)
+            : screening.reason,
     };
 }
 
@@ -1155,11 +1162,21 @@ function lakeviewListingPasses(listing) {
     return getEffectiveLakeviewScreening(listing)?.reviewReady === true;
 }
 
-function syncLakeviewPriceCapControls() {
+function syncLakeviewPriceCapControls(pull = null) {
     const controls = document.getElementById('lakeviewPriceCapControls');
     if (!controls) return;
     const selected = document.getElementById('savedOverlaySelect')?.value === 'lakeviewNational';
     controls.classList.toggle('hidden', !selected);
+    const state = String(pull?.area?.state || '').trim().toUpperCase();
+    const isWashington = state === 'WA';
+    document.getElementById('lakeviewLocalCapSliders')?.classList.toggle('hidden', isWashington);
+    document.getElementById('btnResetLakeviewPriceCap')?.classList.toggle('hidden', isWashington);
+    const title = document.getElementById('lakeviewPriceCapTitle');
+    const sourceNote = document.getElementById('lakeviewPriceCapSourceNote');
+    if (title) title.textContent = isWashington ? 'Washington county review caps' : 'Oregon listing-price review caps';
+    if (sourceNote) sourceNote.textContent = isWashington
+        ? '2026 FHFA Washington county and unit values are applied automatically from the saved listing’s county. No generic statewide high-cost ceiling is used; confirm the current product matrix before operational use.'
+        : '2026 FHFA/Fannie Oregon baselines. Adjust annually after official limits update; saved only in this browser. The property’s verified unit count selects its cap.';
     const caps = getLakeviewPriceCaps();
     Object.entries(caps).forEach(([units, priceCap]) => {
         const slider = document.querySelector(`[data-lakeview-price-cap="${units}"]`);
@@ -1415,7 +1432,7 @@ async function loadFirstHomeLimits() {
         const status = document.getElementById('savedPullStatus');
         const tractField = document.getElementById('formTract');
         const pull = sharedSavedPulls.find((item) => item.snapshotId === select.value);
-        syncLakeviewPriceCapControls();
+        syncLakeviewPriceCapControls(pull);
         if (!pull) return;
         const listings = overlay === 'firstHome'
             ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)

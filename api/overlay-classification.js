@@ -62,6 +62,36 @@ export function parseFirstHomePurchaseLimits(source, filename = "oregon_firsthom
   return { metadata: payload.metadata ?? {}, counties };
 }
 
+export function parseFhfaPacificCountyLimits(source, filename = "fhfa_2026_pacific_county_limits.json") {
+  let payload;
+  try {
+    payload = JSON.parse(source);
+  } catch {
+    throw new Error(`Unable to parse FHFA county limits: ${filename}`);
+  }
+  if (!payload?.states || typeof payload.states !== "object") {
+    throw new Error(`Missing states in ${filename}`);
+  }
+  const states = new Map();
+  for (const [state, statePayload] of Object.entries(payload.states)) {
+    if (!Array.isArray(statePayload?.counties)) continue;
+    const counties = new Map();
+    for (const county of statePayload.counties) {
+      const countyName = normalizeAreaName(county?.county);
+      const caps = Object.fromEntries([1, 2, 3, 4].map((units) => [units, Number(county?.caps?.[units])])) ;
+      if (!countyName || !Object.values(caps).every((cap) => Number.isFinite(cap) && cap > 0)) continue;
+      counties.set(countyName, {
+        county: String(county.county).trim(),
+        fips: String(county.fips ?? "").trim() || null,
+        caps,
+      });
+    }
+    if (counties.size) states.set(String(state).trim().toUpperCase(), counties);
+  }
+  if (!states.size) throw new Error(`No usable county limits in ${filename}`);
+  return { metadata: payload.metadata ?? {}, states };
+}
+
 function normalizeAreaName(value) {
   return String(value ?? "").trim().toLowerCase().replace(/\s+county$/i, "").replace(/\s+/g, " ");
 }
@@ -157,13 +187,15 @@ export function isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFi
 }
 
 async function loadOverlayIndex() {
-  const [tractGeoJson, lmiTracts, usdaGeoJson, firstHomeLimitsSource] = await Promise.all([
+  const [tractGeoJson, lmiTracts, usdaGeoJson, firstHomeLimitsSource, fhfaPacificLimitsSource] = await Promise.all([
     readAssignedJson("oregon-lmi-tracts.js"),
     readLmiTractLookup("lmi-matched-tracts.js"),
     readAssignedJson("usda-rural-development-geojson.js"),
     readFile(path.join(process.cwd(), "oregon_firsthome_purchase_price_limits.json"), "utf8"),
+    readFile(path.join(process.cwd(), "data/fhfa_2026_pacific_county_limits.json"), "utf8"),
   ]);
   const firstHomeLimits = parseFirstHomePurchaseLimits(firstHomeLimitsSource);
+  const fhfaPacificLimits = parseFhfaPacificCountyLimits(fhfaPacificLimitsSource);
 
   return {
     lmiEntries: makeSpatialEntries(tractGeoJson.features ?? [], (feature) => ({
@@ -175,6 +207,7 @@ async function loadOverlayIndex() {
       displayStateFips: feature.properties?.displayStateFips ?? [],
     })),
     firstHomeLimits,
+    fhfaPacificLimits,
   };
 }
 
@@ -234,26 +267,47 @@ export function getLakeviewNationalPropertyScreening(listing) {
  * criteria. Rentcast cannot evaluate those fields, so this is deliberately a
  * map-readiness review screen, never a qualification or approval result.
  */
-export function getLakeviewNationalReviewScreening(listing, requestedState) {
+export function getLakeviewNationalReviewScreening(listing, requestedState, fhfaPacificLimits = null) {
   const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
   const hasAddress = Boolean(String(listing?.formattedAddress ?? listing?.address ?? "").trim());
   const hasCoordinates = Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude));
   const price = Number(listing?.price);
   const hasListedPrice = Number.isFinite(price) && price > 0;
-  const available = state === "OR";
   const property = getLakeviewNationalPropertyScreening(listing);
-  const defaultListingPriceCap = LAKEVIEW_NATIONAL_OREGON_2026_REVIEW_CAPS[property.unitCount] ?? LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP;
+  const countyLimits = fhfaPacificLimits?.states?.get(state);
+  const countyLimit = countyLimits?.get(normalizeAreaName(listing?.county));
+  const configuredState = state === "OR" || state === "WA";
+  const hasCountyLimit = Boolean(countyLimit);
+  const available = configuredState && (state === "OR" || hasCountyLimit);
+  const defaultListingPriceCap = countyLimit?.caps?.[property.unitCount]
+    ?? (state === "OR" ? LAKEVIEW_NATIONAL_OREGON_2026_REVIEW_CAPS[property.unitCount] : null)
+    ?? LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP;
   const priceWithinDefaultCap = hasListedPrice ? price <= defaultListingPriceCap : false;
   return {
     available,
     reviewReady: available && hasAddress && hasCoordinates && priceWithinDefaultCap && property.stickBuiltOneToFour,
-    screenVersion: "rentcast-active-sale-oregon-stick-built-one-to-four-v3",
+    screenVersion: "rentcast-active-sale-county-cap-stick-built-one-to-four-v4",
+    state,
+    county: countyLimit?.county ?? (listing?.county ? String(listing.county).trim() : null),
+    countyFips: countyLimit?.fips ?? null,
+    countyLimitSourceYear: countyLimit ? 2026 : null,
+    usesCountySpecificCap: Boolean(countyLimit),
     defaultListingPriceCap,
     priceWithinDefaultCap,
     property,
-    reason: available
-      ? (!hasAddress || !hasCoordinates ? "Oregon listing needs an address and map coordinates for review." : !hasListedPrice ? "Oregon listing needs a usable listed price for the review cap." : !property.stickBuiltOneToFour ? property.reason : priceWithinDefaultCap ? "Active Oregon stick-built one-to-four-unit sale listing is within the 2026 review cap." : "Listed price is above the 2026 review cap.")
-      : "Lakeview National review screen is currently configured for Oregon saved listings only.",
+    reason: !configuredState
+      ? "Lakeview National review screen is currently configured for Oregon and Washington saved listings only."
+      : state === "WA" && !hasCountyLimit
+        ? "Washington listing needs a recognized county to apply the official 2026 county review cap."
+        : !hasAddress || !hasCoordinates
+          ? `${state === "OR" ? "Oregon" : state} listing needs an address and map coordinates for review.`
+          : !hasListedPrice
+            ? `${state === "OR" ? "Oregon" : state} listing needs a usable listed price for the review cap.`
+            : !property.stickBuiltOneToFour
+              ? property.reason
+              : priceWithinDefaultCap
+                ? `Active ${state === "OR" ? "Oregon" : state} stick-built one-to-four-unit sale listing is within the 2026 ${countyLimit ? "county" : "state"} review cap.`
+                : "Listed price is above the 2026 review cap.",
   };
 }
 
@@ -298,7 +352,7 @@ export function getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateF
 export async function buildOverlaySets(listings, state) {
   const all = Array.isArray(listings) ? listings : [];
   try {
-    const { lmiEntries, usdaEntries, firstHomeLimits } = await getOverlayIndex();
+    const { lmiEntries, usdaEntries, firstHomeLimits, fhfaPacificLimits } = await getOverlayIndex();
     const stateFips = STATE_FIPS[String(state ?? "OR").toUpperCase()] ?? "41";
     const enriched = all.map((listing) => {
       const longitude = Number(listing.longitude);
@@ -309,7 +363,7 @@ export async function buildOverlaySets(listings, state) {
       const lmi = Boolean(lmiEntry);
       const usda = hasCoordinates && isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips);
       const firstHome = getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips);
-      const lakeviewNational = getLakeviewNationalReviewScreening(listing, state);
+      const lakeviewNational = getLakeviewNationalReviewScreening(listing, state, fhfaPacificLimits);
       return {
         ...listing,
         overlayEligibility: {

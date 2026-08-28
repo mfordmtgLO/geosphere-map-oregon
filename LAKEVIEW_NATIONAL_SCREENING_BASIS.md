@@ -2,23 +2,23 @@
 
 ## Purpose and boundary
 
-This GeoSphere feature may identify **for-sale listings in Oregon for Lakeview National review**. It is not an automated eligibility, pricing, underwriting, credit, income, debt-to-income, loan-to-value, or approval decision. The official Lakeview materials state that program references are offered to qualified residential lending institutions and are not applicable to the general public or individual consumers.[1]
+This GeoSphere feature may identify **for-sale listings in Oregon and owner-configured Washington review areas for Lakeview National review**. It is not an automated eligibility, pricing, underwriting, credit, income, debt-to-income, loan-to-value, or approval decision. The official Lakeview materials state that program references are offered to qualified residential lending institutions and are not applicable to the general public or individual consumers.[1]
 
 ## Official program facts captured for UI context
 
 Lakeview describes The National as a down-payment-assistance Community Second program paired with a 30-year fixed-rate first-lien conventional mortgage. The published highlights state an interest-only second lien of up to 4%, a maximum income limit of 140% of AMI, maximum LTV/CLTV of 97%/105%, DTI at the lesser of 50% or AUS, and a minimum 660 FICO score.[1] [2]
 
-The official quick-reference material identifies Oregon among the listed state abbreviations in its state grouping, while directing users to the product matrix for eligible-state confirmation. The map must therefore label Oregon results as **“available for Lakeview National review”**, never as approved or guaranteed eligible.[2]
+The official quick-reference material directs users to the product matrix for eligible-state confirmation. The map therefore labels Oregon and the owner-configured Washington screen as **“available for Lakeview National review,”** never as approved or guaranteed eligible. Current Lakeview product-matrix confirmation remains required before operational use in each state.[2]
 
 ## Rentcast-screenable data contract
 
-Rentcast sale-listing data can identify a listed property and preserve its available address, status, price, property facts, latitude/longitude, and listing-agent fields. It cannot determine borrower income relative to AMI, FICO, AUS findings, DTI, occupancy, complete LTV/CLTV, lender overlays, or the final program matrix result. Therefore, the initial Lakeview National saved-list filter is limited to an active/for-sale Oregon listing with usable address and map coordinates. It deliberately applies **no invented purchase-price, income, credit, or borrower threshold**.
+Rentcast sale-listing data can identify a listed property and preserve its available address, status, price, property facts, latitude/longitude, and listing-agent fields. It cannot determine borrower income relative to AMI, FICO, AUS findings, DTI, occupancy, complete LTV/CLTV, lender overlays, or the final program matrix result. Therefore, the Lakeview National saved-list filter is limited to an active/for-sale Oregon or owner-configured Washington listing with usable address and map coordinates. It deliberately applies **no invented purchase-price, income, credit, or borrower threshold**.
 
 ## Annual conventional-limit review cap
 
-For the initial Oregon Lakeview screen, GeoSphere offers an adjustable **one-unit listing-price review cap** with the 2026 Fannie Mae/FHFA baseline amount of $832,750 prefilled. FHFA identifies $832,750 as the 2026 one-unit baseline conforming loan limit for most U.S. counties, while Fannie Mae publishes the same contiguous-states baseline and describes its values as annual conventional loan limits.[3] [4]
+For the Oregon Lakeview screen, GeoSphere offers adjustable one-to-four-unit local listing-price review caps using the 2026 Fannie Mae/FHFA baseline amounts. For Washington, GeoSphere reads the exact 2026 FHFA county and unit value from the source’s all-counties file; it does not apply a generic state or statutory high-cost ceiling. For example, the official 2026 source lists King, Pierce, and Snohomish counties at $1,063,750 for one unit, not the contiguous-states ceiling of $1,249,125. FHFA identifies $832,750 as the 2026 one-unit baseline conforming loan limit for most U.S. counties, while Fannie Mae publishes the same contiguous-states baseline and describes its values as annual conventional loan limits.[3] [4]
 
-The controls are intentionally not labeled “maximum loan amount.” A sales price does not establish the loan amount, and Fannie Mae specifically says high-cost ceilings should not be used to determine a loan amount. The shared Rentcast sale cache preserves values through the 2026 four-unit high-cost ceiling so the Lakeview review overlay can apply a separate one-, two-, three-, or four-unit cap after the property type and unit screen. Each local control can be adjusted at the next annual FHFA update and does not modify the source Rentcast snapshot or the protected dashboard export.
+The controls are intentionally not labeled “maximum loan amount.” A sales price does not establish the loan amount, and Fannie Mae specifically says high-cost ceilings should not be used to determine a loan amount. The shared Rentcast sale cache preserves values through the 2026 four-unit high-cost ceiling so the Lakeview review overlay can apply a separate one-, two-, three-, or four-unit cap after the property type and unit screen. Oregon’s local controls can be adjusted at the next annual FHFA update; Washington’s saved listings show their source-derived county cap. Neither mode modifies the source Rentcast snapshot or the protected dashboard export.
 
 ## Requested property review policy
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOverlaySets, buildProgramReviewSets, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
+import { buildOverlaySets, buildProgramReviewSets, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
 
 test("parses the project's single-quoted LMI tract lookup", () => {
   const lookup = parseLmiTractLookup(`
@@ -92,7 +92,12 @@ test("marks only map-ready Oregon sale listings for Lakeview National review wit
   assert.deepEqual(getLakeviewNationalReviewScreening({ state: "OR", formattedAddress: "123 Main St", latitude: 44.1, longitude: -123.1 }, "OR"), {
     available: true,
     reviewReady: false,
-    screenVersion: "rentcast-active-sale-oregon-stick-built-one-to-four-v3",
+    screenVersion: "rentcast-active-sale-county-cap-stick-built-one-to-four-v4",
+    state: "OR",
+    county: null,
+    countyFips: null,
+    countyLimitSourceYear: null,
+    usesCountySpecificCap: false,
     defaultListingPriceCap: 832750,
     priceWithinDefaultCap: false,
     property: { propertyType: null, unitCount: null, manufactured: false, stickBuiltOneToFour: false, reason: "Property type is not an explicitly supported stick-built one-to-four-unit residential category." },
@@ -103,6 +108,45 @@ test("marks only map-ready Oregon sale listings for Lakeview National review wit
   assert.equal(getLakeviewNationalReviewScreening({ state: "OR", propertyType: "Single Family", formattedAddress: "123 Main St", latitude: 44.1, longitude: -123.1, price: 832751 }, "OR").priceWithinDefaultCap, false);
   assert.equal(getLakeviewNationalReviewScreening({ state: "WA", propertyType: "Single Family", formattedAddress: "123 Main St", latitude: 47.6, longitude: -122.3, price: 600000 }, "WA").reviewReady, false);
   assert.equal(getLakeviewNationalReviewScreening({ state: "OR", formattedAddress: "123 Main St" }, "OR").reviewReady, false);
+});
+
+test("parses official county data and applies the exact Washington 2026 county value by unit count", () => {
+  const limits = parseFhfaPacificCountyLimits(JSON.stringify({
+    metadata: { year: 2026 },
+    states: {
+      WA: { counties: [
+        { county: "KING", fips: "53033", caps: { 1: 1063750, 2: 1361800, 3: 1646100, 4: 2045700 } },
+        { county: "SPOKANE", fips: "53063", caps: { 1: 832750, 2: 1066250, 3: 1288800, 4: 1601750 } },
+      ] },
+    },
+  }));
+  const king = getLakeviewNationalReviewScreening({ state: "WA", county: "King County", propertyType: "Single Family", formattedAddress: "1 Pine St", latitude: 47.6, longitude: -122.3, price: 1063750 }, "WA", limits);
+  assert.equal(king.reviewReady, true);
+  assert.equal(king.defaultListingPriceCap, 1063750);
+  assert.equal(king.countyFips, "53033");
+  assert.equal(king.usesCountySpecificCap, true);
+  const spokaneOverCap = getLakeviewNationalReviewScreening({ state: "WA", county: "Spokane", propertyType: "Duplex", formattedAddress: "1 Main St", latitude: 47.65, longitude: -117.4, price: 1066251 }, "WA", limits);
+  assert.equal(spokaneOverCap.reviewReady, false);
+  assert.equal(spokaneOverCap.priceWithinDefaultCap, false);
+});
+
+test("applies the bundled FHFA Washington county cap in the saved-list pipeline", async () => {
+  const overlaySets = await buildOverlaySets([{
+    id: "king-exact-cap",
+    state: "WA",
+    county: "King County",
+    propertyType: "Single Family",
+    formattedAddress: "1 Pine St",
+    latitude: 47.6,
+    longitude: -122.3,
+    price: 1063750,
+  }], "WA");
+  const screening = overlaySets.all[0].overlayEligibility.lakeviewNational;
+  assert.equal(screening.reviewReady, true);
+  assert.equal(screening.county, "KING");
+  assert.equal(screening.countyFips, "53033");
+  assert.equal(screening.defaultListingPriceCap, 1063750);
+  assert.equal(buildProgramReviewSets(overlaySets.all).lakeviewNational[0].id, "king-exact-cap");
 });
 
 test("includes only explicitly supported one-to-four-unit stick-built categories and excludes manufactured homes", () => {
