@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildOverlaySets, buildProgramReviewSets, getFhfaCountyLimitReview, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
+import { buildOverlaySets, buildProgramReviewSets, getCalhfaMyHomePropertyReview, getFhfaCountyLimitReview, getFirstHomeScreening, getLakeviewNationalPropertyScreening, getLakeviewNationalReviewScreening, isUsdaEligibleOutsideIneligibleAreas, LAKEVIEW_NATIONAL_OREGON_2026_ONE_UNIT_REVIEW_CAP, parseFhfaPacificCountyLimits, parseFirstHomePurchaseLimits, parseLmiTractLookup } from "./overlay-classification.js";
 
 test("parses the project's single-quoted LMI tract lookup", () => {
   const lookup = parseLmiTractLookup(`
@@ -163,6 +163,17 @@ test("provides a multi-state FHFA county price review context without implying a
   assert.equal(california.reviewReady, false);
   assert.equal(california.priceWithinCap, false);
   assert.match(california.reason, /Listed price is above/);
+});
+
+test("provides CalHFA MyHome property context without inventing a California price cap or borrower decision", () => {
+  const condo = getCalhfaMyHomePropertyReview({ state: "CA", propertyType: "Condominium", formattedAddress: "1 Main St", latitude: 34.1, longitude: -118.2, price: 2500000 }, "CA");
+  const duplex = getCalhfaMyHomePropertyReview({ state: "CA", propertyType: "Duplex", formattedAddress: "2 Main St", latitude: 34.1, longitude: -118.2 }, "CA");
+  const oregon = getCalhfaMyHomePropertyReview({ state: "OR", propertyType: "Single Family", formattedAddress: "3 Main St", latitude: 44.1, longitude: -123.1 }, "OR");
+  assert.equal(condo.reviewReady, true);
+  assert.equal(condo.priceScreenApplied, false);
+  assert.equal(duplex.reviewReady, false);
+  assert.match(duplex.reason, /one-unit/);
+  assert.equal(oregon.available, false);
 });
 
 test("includes only explicitly supported one-to-four-unit stick-built categories and excludes manufactured homes", () => {

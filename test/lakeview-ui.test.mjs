@@ -52,3 +52,11 @@ test("exposes the source-backed FHFA county review overlay without a loan-decisi
   assert.match(html, /FHFA 2026 county price review/);
   assert.match(html, /the listed price is not a loan amount, qualification, or approval decision/);
 });
+
+test("exposes CalHFA MyHome property context without inventing a sales-price or borrower screen", () => {
+  assert.match(html, /value="calhfaMyHome">CalHFA MyHome: property context review/);
+  assert.match(html, /function calhfaMyHomeListingPasses\(listing\)/);
+  assert.match(html, /CalHFA MyHome property context is limited to California one-unit listing categories/);
+  assert.match(html, /CalHFA publishes no general sales-price limit/);
+  assert.match(html, /not a borrower qualification or approval decision/);
+});

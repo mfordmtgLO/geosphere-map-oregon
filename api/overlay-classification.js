@@ -282,6 +282,35 @@ export function getFhfaCountyLimitReview(listing, requestedState, fhfaPacificLim
   };
 }
 
+export function getCalhfaMyHomePropertyReview(listing, requestedState) {
+  const state = String(listing?.state ?? requestedState ?? "").trim().toUpperCase();
+  const propertyType = normalizedPropertyType(listing);
+  const unitCount = inferredConformingUnitCount(listing);
+  const hasAddress = Boolean(String(listing?.formattedAddress ?? listing?.address ?? "").trim());
+  const hasCoordinates = Number.isFinite(Number(listing?.latitude)) && Number.isFinite(Number(listing?.longitude));
+  const publishedCategory = /single[- ]family|\bsfr\b|condo|condominium|\bpud\b|manufactured/.test(propertyType);
+  const reviewReady = state === "CA" && hasAddress && hasCoordinates && unitCount === 1 && publishedCategory;
+  return {
+    available: state === "CA",
+    reviewReady,
+    screenVersion: "calhfa-myhome-property-context-v1",
+    state,
+    unitCount,
+    propertyType: listing?.propertyType ?? listing?.propertySubType ?? null,
+    propertyCategoryMatchesPublishedContext: publishedCategory,
+    priceScreenApplied: false,
+    reason: state !== "CA"
+      ? "CalHFA MyHome property context is currently configured for California saved listings only."
+      : !hasAddress || !hasCoordinates
+        ? "California listing needs an address and map coordinates for property context review."
+        : unitCount !== 1
+          ? "CalHFA MyHome published property context is limited to a single-family one-unit residence, including approved condominium/PUDs; confirm the current matrix for any exception."
+          : !publishedCategory
+            ? "Rentcast property type does not match the published MyHome review categories; confirm property classification with the current CalHFA matrix."
+            : "California one-unit property matches the published MyHome property-context categories. Borrower, lender, first-mortgage, income, counseling, and approval conditions remain unverified.",
+  };
+}
+
 export function getLakeviewNationalPropertyScreening(listing) {
   const propertyType = normalizedPropertyType(listing);
   const unitCount = inferredUnitCount(listing, propertyType);
@@ -357,6 +386,7 @@ export function getLakeviewNationalReviewScreening(listing, requestedState, fhfa
 export function buildProgramReviewSets(listings) {
   const all = Array.isArray(listings) ? listings : [];
   return {
+    calhfaMyHome: all.filter((listing) => listing?.overlayEligibility?.calhfaMyHome?.reviewReady === true),
     fhfaCountyLimit: all.filter((listing) => listing?.overlayEligibility?.fhfaCountyLimit?.reviewReady === true),
     lakeviewNational: all.filter((listing) => listing?.overlayEligibility?.lakeviewNational?.reviewReady === true),
   };
@@ -408,6 +438,7 @@ export async function buildOverlaySets(listings, state) {
       const usda = hasCoordinates && isUsdaEligibleOutsideIneligibleAreas(point, usdaEntries, stateFips);
       const firstHome = getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips);
       const fhfaCountyLimit = getFhfaCountyLimitReview(listing, state, fhfaPacificLimits);
+      const calhfaMyHome = getCalhfaMyHomePropertyReview(listing, state);
       const lakeviewNational = getLakeviewNationalReviewScreening(listing, state, fhfaPacificLimits);
       return {
         ...listing,
@@ -417,6 +448,7 @@ export async function buildOverlaySets(listings, state) {
           usdaInterpretation: "outside-ineligible-v1",
           firstHome,
           fhfaCountyLimit,
+          calhfaMyHome,
           lakeviewNational,
         },
       };
