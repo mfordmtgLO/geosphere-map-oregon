@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { PROGRAM_REVIEW_DEFINITIONS } from "./program-review-config.js";
 
 let overlayIndexPromise;
 
@@ -448,12 +449,10 @@ export function getLakeviewNationalReviewScreening(listing, requestedState, fhfa
 
 export function buildProgramReviewSets(listings) {
   const all = Array.isArray(listings) ? listings : [];
-  return {
-    calhfaMyHome: all.filter((listing) => listing?.overlayEligibility?.calhfaMyHome?.reviewReady === true),
-    fhfaCountyLimit: all.filter((listing) => listing?.overlayEligibility?.fhfaCountyLimit?.reviewReady === true),
-    idahoMrbTaxExempt: all.filter((listing) => listing?.overlayEligibility?.idahoMrbTaxExempt?.reviewReady === true),
-    lakeviewNational: all.filter((listing) => listing?.overlayEligibility?.lakeviewNational?.reviewReady === true),
-  };
+  return Object.fromEntries(PROGRAM_REVIEW_DEFINITIONS.map((definition) => [
+    definition.id,
+    all.filter((listing) => listing?.overlayEligibility?.[definition.eligibilityKey]?.reviewReady === true),
+  ]));
 }
 
 export function getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateFips) {

@@ -8,7 +8,7 @@ test("exposes Lakeview National as an explicit saved-list review selection", () 
   assert.match(html, /value="lakeviewNational">Lakeview National: Oregon \+ Washington review screen/);
   assert.match(html, /Lakeview National is a listing-review screen only/);
   assert.match(html, /\(pull\.overlaySets\?\.all \|\| \[\]\)\.filter\(lakeviewListingPasses\)/);
-  assert.match(html, /Lakeview National review-screened/);
+  assert.match(html, /getLiveProgramReviewDefinition\(overlay\)\?\.shortLabel/);
   assert.match(html, /data-lakeview-price-cap="1"/);
   assert.match(html, /data-lakeview-price-cap="2"/);
   assert.match(html, /data-lakeview-price-cap="3"/);
@@ -74,4 +74,12 @@ test("shows active multi-state review sources and required refresh boundaries", 
   assert.match(html, /FHFA 2026 county review/);
   assert.match(html, /Replace only with a current authorized IHFA chart/);
   assert.match(html, /LMI and USDA remain geographic context only until separately versioned state data is loaded/);
+});
+
+test("uses the live program-review configuration payload for CalHFA and Idaho saved-list selection", () => {
+  assert.match(html, /let liveProgramReviewConfiguration = \{ programs: \[\] \}/);
+  assert.match(html, /function applyLiveProgramReviewConfiguration\(configuration\)/);
+  assert.match(html, /function configuredProgramReviewListings\(pull, overlay\)/);
+  assert.match(html, /applyLiveProgramReviewConfiguration\(payload\.programReviewConfiguration\)/);
+  assert.match(html, /getLiveProgramReviewDefinition\(overlay\)\?\.shortLabel/);
 });

@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { kv } from "@vercel/kv";
 import { buildOverlaySets, buildProgramReviewSets } from "./overlay-classification.js";
+import { getProgramReviewConfiguration } from "./program-review-config.js";
 
 const CACHE_KEY_PREFIX = "listings:";
 const MAX_SCAN_PAGES = 100;
@@ -41,6 +42,7 @@ function normalizeSnapshot(cacheKey, raw) {
       lmiUsda: raw.overlaySets?.lmiUsda ?? [],
     },
     programReviewSets: raw.programReviewSets ?? buildProgramReviewSets(all),
+    programReviewConfiguration: raw.programReviewConfiguration ?? getProgramReviewConfiguration(),
   };
 }
 
@@ -84,7 +86,13 @@ async function refreshLegacyOverlaySets(snapshot) {
   if (!needsOverlayRefresh(snapshot)) return snapshot;
 
   const overlaySets = await buildOverlaySets(snapshot.overlaySets.all, snapshot.area?.state ?? "OR");
-  return { ...snapshot, count: overlaySets.all.length, overlaySets, programReviewSets: buildProgramReviewSets(overlaySets.all) };
+  return {
+    ...snapshot,
+    count: overlaySets.all.length,
+    overlaySets,
+    programReviewSets: buildProgramReviewSets(overlaySets.all),
+    programReviewConfiguration: getProgramReviewConfiguration(),
+  };
 }
 
 /** Shared cache-only reader for the protected dashboard export and the map UI. */

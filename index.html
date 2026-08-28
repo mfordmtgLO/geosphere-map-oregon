@@ -1459,8 +1459,28 @@ async function loadFirstHomeLimits() {
             searchBtn.className = 'w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700';
         }
     }
-    // --- SHARED SAVED-PULL BROWSER (cache-only, never calls Rentcast) ---
-    let sharedSavedPulls = [];
+	    // --- SHARED SAVED-PULL BROWSER (cache-only, never calls Rentcast) ---
+	    let sharedSavedPulls = [];
+	    let liveProgramReviewConfiguration = { programs: [] };
+
+	    function getLiveProgramReviewDefinition(programId) {
+	        return (liveProgramReviewConfiguration?.programs || []).find((program) => program?.id === programId) || null;
+	    }
+
+	    function applyLiveProgramReviewConfiguration(configuration) {
+	        if (!configuration || !Array.isArray(configuration.programs)) return;
+	        liveProgramReviewConfiguration = configuration;
+	        configuration.programs.forEach((program) => {
+	            const option = document.querySelector(`#savedOverlaySelect option[value="${program.id}"]`);
+	            if (option && program.label) option.textContent = program.label;
+	        });
+	    }
+
+	    function configuredProgramReviewListings(pull, overlay) {
+	        const program = getLiveProgramReviewDefinition(overlay);
+	        if (!program) return null;
+	        return pull?.programReviewSets?.[program.id] || [];
+	    }
 
     function formatSavedPullLabel(pull) {
         const area = pull.area || {};
@@ -1480,18 +1500,15 @@ async function loadFirstHomeLimits() {
         document.getElementById('calhfaMyHomeDisclosure')?.classList.toggle('hidden', overlay !== 'calhfaMyHome');
         document.getElementById('idahoMrbTaxExemptDisclosure')?.classList.toggle('hidden', overlay !== 'idahoMrbTaxExempt');
         if (!pull) return;
-        const listings = overlay === 'firstHome'
-            ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
-            : overlay === 'lakeviewNational'
+	        const configuredListings = configuredProgramReviewListings(pull, overlay);
+	        const listings = overlay === 'firstHome'
+	            ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
+	            : overlay === 'lakeviewNational'
                 ? (pull.overlaySets?.all || []).filter(lakeviewListingPasses)
-                : overlay === 'fhfaCountyLimit'
-                    ? (pull.overlaySets?.all || []).filter(fhfaCountyLimitListingPasses)
-                    : overlay === 'calhfaMyHome'
-                        ? (pull.overlaySets?.all || []).filter(calhfaMyHomeListingPasses)
-                        : overlay === 'idahoMrbTaxExempt'
-                            ? (pull.overlaySets?.all || []).filter(idahoMrbTaxExemptListingPasses)
-                    : (pull.overlaySets?.[overlay] || []);
-        const overlayLabel = { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened', fhfaCountyLimit: 'FHFA 2026 county listing-price reviewed', calhfaMyHome: 'CalHFA MyHome property-context reviewed', idahoMrbTaxExempt: 'Idaho Housing Tax-Exempt/MRB county price reviewed', lakeviewNational: 'Lakeview National review-screened' }[overlay] || overlay;
+	                : configuredListings || (pull.overlaySets?.[overlay] || []);
+	        const overlayLabel = getLiveProgramReviewDefinition(overlay)?.shortLabel
+	            || { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened' }[overlay]
+	            || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;
         displayListingsOnMap(listings);
@@ -1505,7 +1522,8 @@ async function loadFirstHomeLimits() {
             const response = await fetch('/api/map-saved-listings');
             if (!response.ok) throw new Error(`Saved listing request failed (${response.status})`);
             const payload = await response.json();
-            sharedSavedPulls = Array.isArray(payload.pulls) ? payload.pulls : [];
+	            applyLiveProgramReviewConfiguration(payload.programReviewConfiguration);
+	            sharedSavedPulls = Array.isArray(payload.pulls) ? payload.pulls : [];
             if (!sharedSavedPulls.length) {
                 select.innerHTML = '<option value="">No shared saved pulls yet</option>';
                 status.textContent = 'Run a Live Pull for an area first. Saved Listings will then browse its persisted snapshot without calling Rentcast.';

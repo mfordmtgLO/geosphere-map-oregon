@@ -35,7 +35,7 @@ For the First Loan Tax-Exempt / Mortgage Revenue Bond program, the authorized IH
 | Data family | Official source | Property-screenable data | Non-screenable conditions | Current implementation status |
 |---|---|---|---|---|
 | Idaho Housing DPA | [Idaho Housing DPA information](https://www.idahohousing.com/homebuyers/down-payment-closing-cost-assistance/) | Listing price only, if paired with an authoritative current cap | Income, funds, education, credit, residency, product approval | Conditional: public page contains no county sales-price data. |
-| Idaho Housing First Loan Tax-Exempt/MRB | [IHFA 2026 Tax-Exempt county chart](https://mediaserve.ihfa.org/?q=377) | County listed price at/below the dated chart value, with chart-row targeted/non-targeted context | Income, credit, employment, education, residency, first-time status, targeted-area qualification, property eligibility, occupancy, underwriting and approval | Active as a May 6, 2026 source-versioned review adapter only. |
+| Idaho Housing First Loan Tax-Exempt/MRB | [IHFA 2026 Tax-Exempt county chart](https://mediaserve.ihfa.org/?q=377) | County listed price at/below the dated chart value, with chart-row targeted/non-targeted context | Income, credit, employment, education, residency, first-time status, targeted-area qualification, property eligibility, occupancy, underwriting and approval | Active through the centralized live program-review registry as a May 6, 2026 source-versioned review adapter only. |
 
 ## California housing-program source findings
 
@@ -44,7 +44,7 @@ CalHFA states that, effective June 1, 2020, it no longer has general sales-price
 | Data family | Official source | Property-screenable data | Non-screenable conditions | Current implementation status |
 |---|---|---|---|---|
 | CalHFA general programs | [CalHFA Income and Sales Price Limits](https://www.calhfa.ca.gov/homeownership/limits/index.htm) | No general sales-price cap | County income limit, first-mortgage rules, borrower/program eligibility | Ready only for an information/disclosure adapter; no price filter. |
-| CalHFA MyHome | [CalHFA MyHome](https://www.calhfa.ca.gov/homebuyer/programs/myhome.htm) | Property type; must use its stated one-unit/approved-condo-PUD rule and not the Lakeview rule | First-time status, occupancy, counseling, income, lender guidelines | Conditional: property-type-only review label, if enabled. |
+| CalHFA MyHome | [CalHFA MyHome](https://www.calhfa.ca.gov/homebuyer/programs/myhome.htm) | Property type; must use its stated one-unit/approved-condo-PUD rule and not the Lakeview rule | First-time status, occupancy, counseling, income, lender guidelines | Active through the centralized live program-review registry as a property-context-only review label; no price filter. |
 | California Dream For All | [CalHFA Dream For All](https://www.calhfa.ca.gov/dream/) | None without a program-specific property rule | Voucher, first-generation status, residency, income, first-time status, education and approval | Information-only; do not add a property screen. |
 
 ## Reusable geographic overlay source findings
@@ -61,6 +61,8 @@ The FFIEC 2026 Census Tract List covers all U.S. census tracts and includes each
 ## Implementation governance contract
 
 The shared engine must treat a program overlay as a versioned **review adapter**, not a general-purpose eligibility engine. A saved listing may retain the reviewed source identifier, source year or effective date, relevant state/county/tract context, individual property screen outcomes, and a human-readable reason. It must not retain a positive conclusion about a borrower or create a “qualified” label.
+
+The live program-review registry is the single configuration contract for active saved-list program screens. It publishes each adapter’s stable ID, eligibility key, label, supported states, source label, and required disclosure through both Live Pull snapshots and the cache-only map reader. The CalHFA MyHome and Idaho Housing Tax-Exempt/MRB adapters are activated through this registry; their existing source-specific classifier functions remain the sole authority for membership.
 
 | Adapter class | May filter or label | Must not determine | Required provenance and refresh rule |
 |---|---|---|---|

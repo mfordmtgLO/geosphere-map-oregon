@@ -1,6 +1,7 @@
 // RENTCAST PROXY V13 - LIVE PULL + SAVED SNAPSHOT EXPORT
 import { kv } from '@vercel/kv';
 import { buildOverlaySets, buildProgramReviewSets } from './overlay-classification.js';
+import { getProgramReviewConfiguration } from './program-review-config.js';
 
 const CACHE_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
 
@@ -93,6 +94,7 @@ export default async function handler(req, res) {
             listings: overlaySets.all,
             overlaySets,
             programReviewSets,
+            programReviewConfiguration: getProgramReviewConfiguration(),
             savedAt,
             cachedAt: savedAt
         };

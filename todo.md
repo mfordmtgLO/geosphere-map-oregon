@@ -36,3 +36,5 @@
 - [x] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements
 - [x] Create and present an evidence-based slide deck summarizing the multi-state GeoSphere review framework and county loan-limit logic
 - [x] Create and present a separate evidence-based slide deck for the OHCS Flex Lending FirstHome LMI, geography, purchase-price, filter-schema, and review-only framework
+- [x] Create a comprehensive GeoSphere multi-state filter-schema testing checklist for LMI tracts, property types, county price and loan-limit review logic, saved-list/export integrity, and safeguards
+- [x] Integrate the source-backed CalHFA MyHome and Idaho Housing Tax-Exempt/MRB review adapters into the live GeoSphere filter configuration engine with review-only disclosures
