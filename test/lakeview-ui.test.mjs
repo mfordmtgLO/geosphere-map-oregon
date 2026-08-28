@@ -68,3 +68,10 @@ test("exposes the authorized Idaho MRB county chart as a review-only saved-list 
   assert.match(html, /Idaho Housing Tax-Exempt\/MRB price review/);
   assert.match(html, /does not establish income, first-time status, targeted-area qualification, property eligibility, or approval/);
 });
+
+test("shows active multi-state review sources and required refresh boundaries", () => {
+  assert.match(html, /Multi-state review sources and refresh guide/);
+  assert.match(html, /FHFA 2026 county review/);
+  assert.match(html, /Replace only with a current authorized IHFA chart/);
+  assert.match(html, /LMI and USDA remain geographic context only until separately versioned state data is loaded/);
+});

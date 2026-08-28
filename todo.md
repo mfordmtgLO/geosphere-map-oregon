@@ -31,5 +31,6 @@
 - [x] Document that Idaho MRB/Tax-Exempt county sales-price limits require a current authorized Lender Connection matrix or internal bulletin and must never be derived from the statutory methodology alone
 - [x] Extract the effective-date, county, targeted-area, and sales-price fields from the authorized IHFA 2026-6 bulletin and version them as Idaho MRB review data
 - [x] Add an Idaho MRB/Tax-Exempt saved-list review overlay, map/popup context, and export metadata without screening borrower, income, or approval conditions
+- [x] Add a visible multi-state source-status and annual-refresh guide for FHFA, Lakeview, FirstHome, CalHFA MyHome, and Idaho MRB saved-list review adapters
 - [x] Add a reusable FHFA 2026 county-and-unit listing-price review overlay across Oregon, Washington, Idaho, and California without implying a conforming loan approval
 - [x] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements
