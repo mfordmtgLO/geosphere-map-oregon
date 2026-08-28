@@ -28,5 +28,6 @@
 - [ ] Add only verified Washington, Idaho, and California program review overlays, local annual controls, popup context, and saved-list export treatment
 - [x] Add a CalHFA MyHome California property-context review overlay using only its published single-unit, condominium/PUD, and manufactured-housing rules, with no invented sales-price cap
 - [ ] Keep Idaho Housing state-program price filtering disabled until its current official county sales-price chart is captured and versioned
+- [ ] Document that Idaho MRB/Tax-Exempt county sales-price limits require a current authorized Lender Connection matrix or internal bulletin and must never be derived from the statutory methodology alone
 - [x] Add a reusable FHFA 2026 county-and-unit listing-price review overlay across Oregon, Washington, Idaho, and California without implying a conforming loan approval
 - [x] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements
