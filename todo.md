@@ -34,3 +34,5 @@
 - [x] Add a visible multi-state source-status and annual-refresh guide for FHFA, Lakeview, FirstHome, CalHFA MyHome, and Idaho MRB saved-list review adapters
 - [x] Add a reusable FHFA 2026 county-and-unit listing-price review overlay across Oregon, Washington, Idaho, and California without implying a conforming loan approval
 - [x] Document multi-state review-only disclosures, data-source provenance, annual update governance, validation coverage, and future program-adapter requirements
+- [x] Create and present an evidence-based slide deck summarizing the multi-state GeoSphere review framework and county loan-limit logic
+- [x] Create and present a separate evidence-based slide deck for the OHCS Flex Lending FirstHome LMI, geography, purchase-price, filter-schema, and review-only framework
