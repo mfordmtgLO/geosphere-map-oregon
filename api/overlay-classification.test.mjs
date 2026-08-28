@@ -58,15 +58,15 @@ test("screens LMI listings against the correct targeted or non-targeted FirstHom
   }));
   const targeted = getFirstHomeScreening({ county: "Benton", city: "Corvallis", price: 700000 }, { tractCode: "001101" }, limits, "41");
   const nonTargeted = getFirstHomeScreening({ county: "Benton", city: "Corvallis", price: 700000 }, { tractCode: "002000" }, limits, "41");
-  assert.deepEqual(targeted, {
-    available: true,
-    priceEligible: true,
-    lmiEligible: true,
-    areaType: "targeted",
-    priceLimit: 786797,
-    county: "Benton",
-    targetedAreaDetails: "Census tract 0011.01",
-  });
+  assert.equal(targeted.available, true);
+  assert.equal(targeted.reviewReady, true);
+  assert.equal(targeted.screenVersion, "ohcs-flex-lending-firsthome-lmi-targeted-price-review-v1");
+  assert.equal(targeted.priceEligible, true);
+  assert.equal(targeted.lmiEligible, true);
+  assert.equal(targeted.areaType, "targeted");
+  assert.equal(targeted.priceLimit, 786797);
+  assert.equal(targeted.county, "Benton");
+  assert.equal(targeted.targetedAreaDetails, "Census tract 0011.01");
   assert.equal(nonTargeted.areaType, "non_targeted");
   assert.equal(nonTargeted.priceLimit, 643743);
   assert.equal(nonTargeted.priceEligible, false);
@@ -87,6 +87,8 @@ test("adds FirstHome metadata without changing the existing dashboard sync overl
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.areaType, "targeted");
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.priceLimit, 692211);
   assert.equal(overlaySets.all[0].overlayEligibility.firstHome.priceEligible, true);
+  assert.equal(overlaySets.all[0].overlayEligibility.firstHome.reviewReady, false);
+  assert.deepEqual(buildProgramReviewSets(overlaySets.all).firstHome, []);
 });
 
 test("marks only map-ready Oregon sale listings for Lakeview National review without implying qualification", () => {

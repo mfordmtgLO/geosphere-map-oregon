@@ -210,7 +210,7 @@
                             <option value="lmi">LMI listings</option>
                             <option value="usda">USDA RD eligible listings</option>
                             <option value="lmiUsda">LMI + USDA RD eligible listings</option>
-                            <option value="firstHome">FirstHome: LMI + purchase-price screen</option>
+                            <option value="firstHome">OHCS Flex Lending FirstHome: LMI + purchase-price review</option>
                             <option value="fhfaCountyLimit">FHFA 2026: county listing-price review</option>
                             <option value="calhfaMyHome">CalHFA MyHome: property context review</option>
                             <option value="idahoMrbTaxExempt">Idaho Housing: Tax-Exempt/MRB price review</option>
@@ -1479,6 +1479,8 @@ async function loadFirstHomeLimits() {
 	    function configuredProgramReviewListings(pull, overlay) {
 	        const program = getLiveProgramReviewDefinition(overlay);
 	        if (!program) return null;
+	        if (program.id === 'firstHome') return (pull?.overlaySets?.all || []).filter(firstHomeListingPasses);
+	        if (program.id === 'lakeviewNational') return (pull?.overlaySets?.all || []).filter(lakeviewListingPasses);
 	        return pull?.programReviewSets?.[program.id] || [];
 	    }
 
@@ -1501,13 +1503,9 @@ async function loadFirstHomeLimits() {
         document.getElementById('idahoMrbTaxExemptDisclosure')?.classList.toggle('hidden', overlay !== 'idahoMrbTaxExempt');
         if (!pull) return;
 	        const configuredListings = configuredProgramReviewListings(pull, overlay);
-	        const listings = overlay === 'firstHome'
-	            ? (pull.overlaySets?.all || []).filter(firstHomeListingPasses)
-	            : overlay === 'lakeviewNational'
-                ? (pull.overlaySets?.all || []).filter(lakeviewListingPasses)
-	                : configuredListings || (pull.overlaySets?.[overlay] || []);
+	        const listings = configuredListings || (pull.overlaySets?.[overlay] || []);
 	        const overlayLabel = getLiveProgramReviewDefinition(overlay)?.shortLabel
-	            || { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible', firstHome: 'FirstHome LMI + purchase-price screened' }[overlay]
+	            || { all: 'all eligible', lmi: 'LMI', usda: 'USDA RD eligible', lmiUsda: 'LMI + USDA RD eligible' }[overlay]
 	            || overlay;
         tractField.value = `${listings.length} saved ${overlayLabel} listings`;
         status.textContent = `Showing ${listings.length} ${overlayLabel} listings from ${formatSavedPullLabel(pull)}. Cache-only — no Rentcast call.`;

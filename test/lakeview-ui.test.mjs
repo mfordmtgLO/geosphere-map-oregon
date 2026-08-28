@@ -7,7 +7,7 @@ const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 test("exposes Lakeview National as an explicit saved-list review selection", () => {
   assert.match(html, /value="lakeviewNational">Lakeview National: Oregon \+ Washington review screen/);
   assert.match(html, /Lakeview National is a listing-review screen only/);
-  assert.match(html, /\(pull\.overlaySets\?\.all \|\| \[\]\)\.filter\(lakeviewListingPasses\)/);
+  assert.match(html, /\(pull\?\.overlaySets\?\.all \|\| \[\]\)\.filter\(lakeviewListingPasses\)/);
   assert.match(html, /getLiveProgramReviewDefinition\(overlay\)\?\.shortLabel/);
   assert.match(html, /data-lakeview-price-cap="1"/);
   assert.match(html, /data-lakeview-price-cap="2"/);
@@ -82,4 +82,6 @@ test("uses the live program-review configuration payload for CalHFA and Idaho sa
   assert.match(html, /function configuredProgramReviewListings\(pull, overlay\)/);
   assert.match(html, /applyLiveProgramReviewConfiguration\(payload\.programReviewConfiguration\)/);
   assert.match(html, /getLiveProgramReviewDefinition\(overlay\)\?\.shortLabel/);
+  assert.match(html, /program\.id === 'firstHome'/);
+  assert.match(html, /\(pull\?\.overlaySets\?\.all \|\| \[\]\)\.filter\(firstHomeListingPasses\)/);
 });

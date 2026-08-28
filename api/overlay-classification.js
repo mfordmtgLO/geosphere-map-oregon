@@ -470,6 +470,10 @@ export function getFirstHomeScreening(listing, lmiEntry, firstHomeLimits, stateF
   const priceEligible = Number.isFinite(price) && price > 0 && Number.isFinite(priceLimit) ? price <= priceLimit : null;
   return {
     available: Number.isFinite(priceLimit),
+    reviewReady: Boolean(lmiEntry) && priceEligible === true,
+    screenVersion: "ohcs-flex-lending-firsthome-lmi-targeted-price-review-v1",
+    sourceRetrievedOn: firstHomeLimits?.metadata?.source?.retrieved_on ?? null,
+    sourceJurisdiction: firstHomeLimits?.metadata?.jurisdiction ?? null,
     priceEligible,
     lmiEligible: Boolean(lmiEntry) && priceEligible === true,
     areaType,

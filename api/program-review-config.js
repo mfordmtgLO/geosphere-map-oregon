@@ -2,6 +2,17 @@ export const PROGRAM_REVIEW_CONFIGURATION_VERSION = "program-review-config-v1";
 
 export const PROGRAM_REVIEW_DEFINITIONS = Object.freeze([
   Object.freeze({
+    id: "firstHome",
+    eligibilityKey: "firstHome",
+    label: "OHCS Flex Lending FirstHome: LMI + purchase-price review",
+    shortLabel: "OHCS FirstHome LMI + purchase-price reviewed",
+    states: Object.freeze(["OR"]),
+    sourceLabel: "OHCS FirstHome county targeted/non-targeted purchase-price limits and FFIEC LMI tract context",
+    sourceRetrievedOn: "2026-08-19",
+    localReviewOverrideSupported: true,
+    disclosure: "OHCS FirstHome review requires the saved Oregon listing to match the configured FFIEC LMI tract context and the applicable targeted or non-targeted OHCS purchase-price limit. It does not determine borrower, property, program, lender, underwriting, or approval eligibility.",
+  }),
+  Object.freeze({
     id: "fhfaCountyLimit",
     eligibilityKey: "fhfaCountyLimit",
     label: "FHFA 2026: county listing-price review",
@@ -49,6 +60,8 @@ export function getProgramReviewConfiguration() {
       shortLabel: definition.shortLabel,
       states: [...definition.states],
       sourceLabel: definition.sourceLabel,
+      sourceRetrievedOn: definition.sourceRetrievedOn ?? null,
+      localReviewOverrideSupported: definition.localReviewOverrideSupported === true,
       disclosure: definition.disclosure,
     })),
   };

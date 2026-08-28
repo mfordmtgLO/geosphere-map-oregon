@@ -62,7 +62,9 @@ The FFIEC 2026 Census Tract List covers all U.S. census tracts and includes each
 
 The shared engine must treat a program overlay as a versioned **review adapter**, not a general-purpose eligibility engine. A saved listing may retain the reviewed source identifier, source year or effective date, relevant state/county/tract context, individual property screen outcomes, and a human-readable reason. It must not retain a positive conclusion about a borrower or create a “qualified” label.
 
-The live program-review registry is the single configuration contract for active saved-list program screens. It publishes each adapter’s stable ID, eligibility key, label, supported states, source label, and required disclosure through both Live Pull snapshots and the cache-only map reader. The CalHFA MyHome and Idaho Housing Tax-Exempt/MRB adapters are activated through this registry; their existing source-specific classifier functions remain the sole authority for membership.
+The live program-review registry is the single configuration contract for active saved-list program screens. It publishes each adapter’s stable ID, eligibility key, label, supported states, source label, required disclosure, and any explicitly supported browser-local review control through both Live Pull snapshots and the cache-only map reader. The OHCS Flex Lending FirstHome, CalHFA MyHome, and Idaho Housing Tax-Exempt/MRB adapters are activated through this registry; their existing source-specific classifier functions remain the sole authority for membership.
+
+The FirstHome adapter is Oregon-only and is sourced from the versioned OHCS county purchase-price dataset retrieved on **2026-08-19**, combined with the GeoSphere FFIEC LMI tract context. It selects a saved listing only when the LMI context is present and its listed price is at or below the applicable targeted or non-targeted county limit. The existing browser-local FirstHome price-review controls remain explicitly local and do not alter the source dataset, saved snapshot, or eligibility standard.
 
 | Adapter class | May filter or label | Must not determine | Required provenance and refresh rule |
 |---|---|---|---|
