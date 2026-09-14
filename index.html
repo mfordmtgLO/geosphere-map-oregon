@@ -76,7 +76,19 @@
             text-decoration: none !important;
             width: 30px;
         }
-    </style>
+    /* Ensure map popup has a max height and clean scrollbar so nothing gets cut off */
+.leaflet-popup-content-wrapper {
+  max-height: 480px;
+  overflow-y: auto !important;
+  padding-right: 4px;
+}
+
+.leaflet-popup-content {
+  margin: 14px 16px !important;
+  max-height: 450px;
+  overflow-y: auto !important;
+}
+	</style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
 
