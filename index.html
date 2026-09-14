@@ -1457,6 +1457,9 @@ async function loadFirstHomeLimits() {
                         autoPan: true,
                         autoPanPadding: [20, 20]
                     });
+				window.listingMarkers.addLayer(marker);
+            }
+        });
         
         try {
             if (listings.length > 0 && window.listingMarkers && window.listingMarkers.getLayers() && window.listingMarkers.getLayers().length > 0) {
