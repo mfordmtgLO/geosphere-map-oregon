@@ -76,18 +76,36 @@
             text-decoration: none !important;
             width: 30px;
         }
-    /* Ensure map popup has a max height and clean scrollbar so nothing gets cut off */
-.leaflet-popup-content-wrapper {
-  max-height: 480px;
-  overflow-y: auto !important;
-  padding-right: 4px;
-}
+    /* Ensure map popup has a comfortable max height and a clearly visible scrollbar */
+    .leaflet-popup-content-wrapper {
+      max-height: 540px !important;
+      overflow: hidden !important;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+    }
 
-.leaflet-popup-content {
-  margin: 14px 16px !important;
-  max-height: 450px;
-  overflow-y: auto !important;
-}
+    .leaflet-popup-content {
+      margin: 14px 14px 14px 16px !important;
+      max-height: 500px !important;
+      overflow-y: auto !important;
+      padding-right: 6px;
+    }
+
+    /* Custom thin scrollbar so you can see there is more content to scroll */
+    .leaflet-popup-content::-webkit-scrollbar {
+      width: 6px;
+    }
+    .leaflet-popup-content::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 4px;
+    }
+    .leaflet-popup-content::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 4px;
+    }
+    .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
+      background: #64748b;
+    }
 	</style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
@@ -1401,40 +1419,44 @@ async function loadFirstHomeLimits() {
                 
                                                const marker = L.marker([listing.latitude, listing.longitude], { icon: customIcon })
                     .bindPopup(`
-                        <div class="text-sm font-sans" style="min-width: 260px; max-width: 320px; color: #1e293b;">
+                        <div class="text-sm font-sans" style="min-width: 270px; max-width: 320px; color: #1e293b;">
                             <strong style="color: #059669; font-size: 16px; font-weight: 700;">${price}</strong><br>
                             <span style="color: #334155; font-size: 12px; font-weight: 600;">${escapeHtml(String(beds))} bed · ${escapeHtml(String(baths))} bath${sqft ? ' · ' + escapeHtml(String(sqft)) : ''} · Built ${escapeHtml(String(yearBuilt))}</span><br>
                             <span style="color: #334155; font-size: 12px; font-weight: 600;">Days on Market: <strong style="font-weight: 700; color: #1e293b;">${escapeHtml(String(daysOnMarket))}</strong></span><br>
                             <span style="color: #1e293b; font-size: 12px; font-weight: 600;">${escapeHtml(String(address))}</span><br>
                             <span style="color: #4f46e5; font-size: 12px; font-weight: 600;">${escapeHtml(String(propType))}</span>
                             ${mls ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">MLS#: <span style="font-family: monospace; color: #d97706; font-weight: 700;">${escapeHtml(String(mls))}</span>${mlsName ? ' (' + escapeHtml(String(mlsName)) + ')' : ''}</span>` : ''}
+
+                            <!-- 🌟 LISTING AGENT MOVED UP: Prominently displayed right under property specs -->
+                            <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px; background: #f8fafc; padding: 8px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                                <div style="color: #0f172a; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.025em; margin-bottom: 2px;">Listing Agent</div>
+                                <div style="color: #1e293b; font-size: 13px; font-weight: 700;">${escapeHtml(String(agentName))}</div>
+                                ${agentPhoneHref ? `<div style="margin-top: 2px;"><a href="${agentPhoneHref}" style="color: #2563eb; font-size: 12px; font-weight: 600; text-decoration: none;">📞 ${escapeHtml(String(agentPhone))}</a></div>` : ''}
+                                ${agentEmailHref ? `<div style="margin-top: 2px;"><a href="${agentEmailHref}" style="color: #2563eb; font-size: 12px; font-weight: 600; text-decoration: none;">✉️ ${escapeHtml(String(agentEmail))}</a></div>` : ''}
+                                ${agentWebsiteHref ? `<div style="margin-top: 2px;"><a href="${escapeHtml(agentWebsiteHref)}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-size: 12px; font-weight: 600; text-decoration: none;">🌐 Agent Website</a></div>` : ''}
+                            </div>
+
                             ${firstHomeMarkup}
                             ${fhfaMarkup}
                             ${calhfaMarkup}
                             ${idahoMrbMarkup}
                             ${lakeviewMarkup}
-                            
-                            <div style="border-top: 1px solid #e2e8f0; margin-top: 8px; padding-top: 8px;">
-                                <span style="color: #1e293b; font-size: 12px; font-weight: 700;">Listing Agent</span><br>
-                                <span style="color: #334155; font-size: 12px; font-weight: 600;">${escapeHtml(String(agentName))}</span>
-                                ${agentPhoneHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">📞 <a href="${agentPhoneHref}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${escapeHtml(String(agentPhone))}</a></span>` : ''}
-                                ${agentEmailHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">✉️ <a href="${agentEmailHref}" style="color: #4f46e5; font-weight: 700; text-decoration: none;">${escapeHtml(String(agentEmail))}</a></span>` : ''}
-                                ${agentWebsiteHref ? `<br><span style="color: #334155; font-size: 12px; font-weight: 600;">🌐 <a href="${escapeHtml(agentWebsiteHref)}" target="_blank" rel="noopener noreferrer" style="color: #4f46e5; font-weight: 700; text-decoration: none;">Website</a></span>` : ''}
-                            </div>
+
                             ${renderFullRentcastRecord(listing)}
                             
-                            <div style="margin-top: 8px;">
-                                <a href="${zillowUrl}" target="_blank" 
-                                   style="display: block; width: 100%; text-align: center; border-radius: 8px; background: #2563eb; padding: 6px 12px; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
+                            <div style="margin-top: 10px;">
+                                <a href="${zillowUrl}" target="_blank"
+                                    style="display: block; width: 100%; text-align: center; border-radius: 8px; background: #2563eb; padding: 8px 12px; color: #ffffff; font-size: 13px; font-weight: 700; text-decoration: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">
                                     🏠 View on Zillow
                                 </a>
                             </div>
                         </div>
-                    `, { maxWidth: 350 });
-                
-                window.listingMarkers.addLayer(marker);
-            }
-        });
+                    `, { 
+                        maxWidth: 350,
+                        maxHeight: 520,
+                        autoPan: true,
+                        autoPanPadding: [20, 20]
+                    });
         
         try {
             if (listings.length > 0 && window.listingMarkers && window.listingMarkers.getLayers() && window.listingMarkers.getLayers().length > 0) {
