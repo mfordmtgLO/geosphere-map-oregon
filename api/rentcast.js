@@ -70,14 +70,34 @@ export default async function handler(req, res) {
         }
         
         const filtered = allListings.filter(listing => {
-            // Keep room for the 2026 four-unit high-cost ceiling in the shared
-            // cache; program review overlays apply their own lower caps.
-            if (!listing.price || listing.price < 250000 || listing.price > 2402625) return false;
+            // 1. PRICE CAP: Minimum $250k, Maximum $800k
+            if (!listing.price || listing.price < 250000 || listing.price > 800000) return false;
+
+            // 2. EXCLUDED PROPERTY TYPES
             if (listing.propertyType === 'Land' || listing.propertyType === 'Lots/Land') return false;
             if (listing.propertyType === 'Commercial' || listing.propertyType === 'Industrial') return false;
             if ((listing.propertyType === 'Multi-Family' || listing.propertyType === 'Multi Family') && Number(listing.units ?? listing.unitCount ?? listing.numberOfUnits) > 4) return false;
-            if ((listing.propertyType === 'Manufactured' || listing.propertyType === 'Mobile/Manufactured') 
-                && listing.landLease === true) return false;
+
+            // 3. SIZE & ACREAGE FILTERS
+            // 850 sqft minimum (Rentcast uses 'squareFootage')
+            if (listing.squareFootage && listing.squareFootage < 850) return false;
+            // 10 acres maximum (Rentcast returns 'lotSize' in square feet. 10 acres = 435,600 sqft)
+            if (listing.lotSize && listing.lotSize > 435600) return false;
+
+            // 4. MANUFACTURED HOME CONSTRAINTS
+            const isManufactured = listing.propertyType === 'Manufactured' || 
+                                   listing.propertyType === 'Mobile/Manufactured' || 
+                                   (typeof listing.propertyType === 'string' && listing.propertyType.toLowerCase().includes('manufactured'));
+                                   
+            if (isManufactured) {
+                // Must NOT be on leased land / in a park
+                if (listing.landLease === true) return false;
+                
+                // Must be built AFTER 1994 (Year Built >= 1995)
+                // If the year is missing entirely, we also exclude it to be safe
+                if (!listing.yearBuilt || listing.yearBuilt < 1995) return false;
+            }
+
             return true;
         });
         
