@@ -444,7 +444,24 @@ function setCachedResults(cacheKey, data) {
     }
 }
     
-    // --- 1. API HARD STOP SYSTEM ---
+    // --- 1. CLOUD-SYNCED API HARD STOP SYSTEM ---
+    async function syncApiCounterFromBackend() {
+        try {
+            const res = await fetch('/api/rentcast?action=get_usage');
+            if (res.ok) {
+                const data = await res.json();
+                if (typeof data.count === 'number') {
+                    localStorage.setItem('rentcast_api_count', data.count.toString());
+                    updateApiCounterUI();
+                    return data.count;
+                }
+            }
+        } catch (e) {
+            console.warn('Could not sync usage from KV backend, using local:', e);
+        }
+        return getApiCount();
+    }
+
     function getApiCount() {
         return parseInt(localStorage.getItem('rentcast_api_count') || '0');
     }
@@ -454,66 +471,32 @@ function setCachedResults(cacheKey, data) {
         updateApiCounterUI();
     }
     
-    function incrementApiCount() {
+    function incrementApiCount(byAmount = 1) {
         const current = getApiCount();
         if (current >= MAX_PULLS) return false;
-        setApiCount(current + 1);
+        setApiCount(current + byAmount);
         return true;
     }
     
     function isApiHardStopped() {
         return getApiCount() >= MAX_PULLS;
     }
-    
-        function resetApiCounter() {
-        if (confirm('Reset RentCast API counter to 0? Only do this when your billing cycle renews.\n\nThis will also clear all cached search results.')) {
+        
+    async function resetApiCounter() {
+        if (confirm('Reset RentCast API counter to 0 on both server and browser?\n\nOnly do this when your billing cycle renews on the 6th.\n\nThis will also clear all cached search results.')) {
             setApiCount(0);
-            // Clear all cached listing results
+            try {
+                await fetch('/api/rentcast?action=reset_usage', { method: 'POST' });
+            } catch (e) {
+                console.error('Failed to reset backend counter:', e);
+            }
+            // Clear all cached listing results in local storage
             Object.keys(localStorage).forEach(key => {
                 if (key.startsWith(CACHE_KEY_PREFIX)) {
                     localStorage.removeItem(key);
                 }
             });
             alert('✅ API counter and cache reset. Pulls available: ' + MAX_PULLS);
-        }
-    }
-    
-    function updateApiCounterUI() {
-        const count = getApiCount();
-        const counterEl = document.getElementById('apiCounterColor');
-        const progressBar = document.getElementById('apiProgressBar');
-        const statusEl = document.getElementById('apiStatus');
-        const hardStopWarning = document.getElementById('apiHardStopWarning');
-        
-        if (counterEl) counterEl.textContent = count;
-        
-        const percentage = Math.min((count / MAX_PULLS) * 100, 100);
-        if (progressBar) progressBar.style.width = percentage + '%';
-        
-        if (count >= MAX_PULLS) {
-            progressBar.style.background = '#ef4444';
-            counterEl.style.color = '#ef4444';
-            statusEl.textContent = '🚫 HARD STOP — 50/50 reached';
-            statusEl.className = 'text-xs text-red-400 text-center font-semibold';
-            hardStopWarning.classList.remove('hidden');
-        } else if (count >= 40) {
-            progressBar.style.background = '#f59e0b';
-            counterEl.style.color = '#f59e0b';
-            statusEl.textContent = '⚠️ Approaching limit — ' + (MAX_PULLS - count) + ' pulls remaining';
-            statusEl.className = 'text-xs text-amber-400 text-center';
-            hardStopWarning.classList.add('hidden');
-        } else if (count >= 25) {
-            progressBar.style.background = '#facc15';
-            counterEl.style.color = '#facc15';
-            statusEl.textContent = 'Active — ' + (MAX_PULLS - count) + ' pulls remaining';
-            statusEl.className = 'text-xs text-slate-400 text-center';
-            hardStopWarning.classList.add('hidden');
-        } else {
-            progressBar.style.background = '#22c55e';
-            counterEl.style.color = '#22c55e';
-            statusEl.textContent = 'Ready — ' + (MAX_PULLS - count) + ' pulls available';
-            statusEl.className = 'text-xs text-slate-400 text-center';
-            hardStopWarning.classList.add('hidden');
         }
     }
     
