@@ -499,8 +499,55 @@ function setCachedResults(cacheKey, data) {
             alert('✅ API counter and cache reset. Pulls available: ' + MAX_PULLS);
         }
     }
-    
-        // --- 2. OREGON LOCATION VALIDATION ---
+
+    function updateApiCounterUI() {
+        const count = getApiCount();
+        const counterEl = document.getElementById("apiCounterColor");
+        const progressBar = document.getElementById("apiProgressBar");
+        const statusEl = document.getElementById("apiStatus");
+        const hardStopWarning = document.getElementById("apiHardStopWarning");
+        
+        if (counterEl) counterEl.textContent = count;
+        
+        const percentage = Math.min((count / MAX_PULLS) * 100, 100);
+        if (progressBar) progressBar.style.width = percentage + "%";
+        
+        if (count >= MAX_PULLS) {
+            if (progressBar) progressBar.style.background = "#ef4444";
+            if (counterEl) counterEl.style.color = "#ef4444";
+            if (statusEl) {
+                statusEl.textContent = "🚫 HARD STOP — 50/50 reached";
+                statusEl.className = "text-xs text-red-400 text-center font-semibold";
+            }
+            if (hardStopWarning) hardStopWarning.classList.remove("hidden");
+        } else if (count >= 40) {
+            if (progressBar) progressBar.style.background = "#f59e0b";
+            if (counterEl) counterEl.style.color = "#f59e0b";
+            if (statusEl) {
+                statusEl.textContent = "⚠️ Approaching limit — " + (MAX_PULLS - count) + " pulls remaining";
+                statusEl.className = "text-xs text-amber-400 text-center";
+            }
+            if (hardStopWarning) hardStopWarning.classList.add("hidden");
+        } else if (count >= 25) {
+            if (progressBar) progressBar.style.background = "#facc15";
+            if (counterEl) counterEl.style.color = "#facc15";
+            if (statusEl) {
+                statusEl.textContent = "Active — " + (MAX_PULLS - count) + " pulls remaining";
+                statusEl.className = "text-xs text-slate-400 text-center";
+            }
+            if (hardStopWarning) hardStopWarning.classList.add("hidden");
+        } else {
+            if (progressBar) progressBar.style.background = "#22c55e";
+            if (counterEl) counterEl.style.color = "#22c55e";
+            if (statusEl) {
+                statusEl.textContent = "Ready — " + (MAX_PULLS - count) + " pulls available";
+                statusEl.className = "text-xs text-slate-400 text-center";
+            }
+            if (hardStopWarning) hardStopWarning.classList.add("hidden");
+        }
+    }
+
+            // --- 2. OREGON LOCATION VALIDATION ---
         // --- 2. LOCATION VALIDATION ---
     function isValidLocation(query) {
         const q = query.toLowerCase().trim();
