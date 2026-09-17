@@ -40,8 +40,19 @@
             touch-action: pan-x pan-y;
         }
         .sidebar-scroll {
-            -webkit-overflow-scrolling: touch;
+            height: 100% !important;
+            max-height: 100% !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            overscroll-behavior: contain !important;
+            scrollbar-width: thin;
+            scrollbar-color: #6366f1 #0f172a;
         }
+        .sidebar-scroll::-webkit-scrollbar { width: 8px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: #020617; border-left: 1px solid #1e293b; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #6366f1; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
@@ -54,60 +65,6 @@
         .price-marker div {
             pointer-events: auto;
         }
-        .sidebar-scroll {
-            scrollbar-width: thin;
-            scrollbar-color: #475569 #0f172a;
-        }
-        .sidebar-scroll::-webkit-scrollbar { width: 12px; }
-        .sidebar-scroll::-webkit-scrollbar-track { background: #0f172a; border-left: 1px solid #1e293b; }
-        .sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border: 3px solid #0f172a; border-radius: 999px; }
-        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
-        #map:fullscreen,
-        #map:-webkit-full-screen {
-            width: 100vw;
-            height: 100vh;
-            background: #0f172a;
-        }
-        #map.map-inline-fullscreen {
-            position: absolute;
-            inset: 0;
-            z-index: 100;
-            width: 100% !important;
-            height: 100% !important;
-            background: #0f172a;
-        }
-        #map.map-inline-fullscreen ~ div {
-            display: none !important;
-        }
-        .map-fullscreen-button {
-            align-items: center;
-            background: #ffffff;
-            color: #1e293b !important;
-            display: flex !important;
-            font-size: 17px;
-            font-weight: 700;
-            height: 30px;
-            justify-content: center;
-            line-height: 1;
-            text-decoration: none !important;
-            width: 30px;
-        }
-        .leaflet-popup-content-wrapper {
-            max-height: 540px !important;
-            overflow: hidden !important;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-        }
-        .leaflet-popup-content {
-            margin: 14px 14px 14px 16px !important;
-            max-height: 500px !important;
-            overflow-y: auto !important;
-            padding-right: 6px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar { width: 6px; }
-        .leaflet-popup-content::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .leaflet-popup-content::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
-        .leaflet-popup-content::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
