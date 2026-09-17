@@ -56,31 +56,47 @@
         }
         .sidebar-scroll {
             scrollbar-width: thin;
-            scrollbar-color: #1e293b #020617;
+            scrollbar-color: #475569 #0f172a;
         }
-        .sidebar-scroll::-webkit-scrollbar {
-            width: 6px;
+        .sidebar-scroll::-webkit-scrollbar { width: 12px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: #0f172a; border-left: 1px solid #1e293b; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #475569; border: 3px solid #0f172a; border-radius: 999px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        #map:fullscreen,
+        #map:-webkit-full-screen {
+            width: 100vw;
+            height: 100vh;
+            background: #0f172a;
         }
-        .sidebar-scroll::-webkit-scrollbar-track {
-            background: #020617;
+        #map.map-inline-fullscreen {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            width: 100% !important;
+            height: 100% !important;
+            background: #0f172a;
         }
-        .sidebar-scroll::-webkit-scrollbar-thumb {
-            background-color: #1e293b;
-            border-radius: 3px;
+        #map.map-inline-fullscreen ~ div {
+            display: none !important;
         }
-        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-            background-color: #334155;
+        .map-fullscreen-button {
+            align-items: center;
+            background: #ffffff;
+            color: #1e293b !important;
+            display: flex !important;
+            font-size: 17px;
+            font-weight: 700;
+            height: 30px;
+            justify-content: center;
+            line-height: 1;
+            text-decoration: none !important;
+            width: 30px;
         }
         .leaflet-popup-content-wrapper {
-            background: #ffffff !important;
-            color: #0f172a !important;
-            border-radius: 14px !important;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5) !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 0 !important;
-        }
-        .leaflet-popup-tip {
-            background: #ffffff !important;
+            max-height: 540px !important;
+            overflow: hidden !important;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
         }
         .leaflet-popup-content {
             margin: 14px 14px 14px 16px !important;
@@ -88,20 +104,10 @@
             overflow-y: auto !important;
             padding-right: 6px;
         }
-        .leaflet-popup-content::-webkit-scrollbar {
-            width: 6px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 4px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 4px;
-        }
-        .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
-            background: #64748b;
-        }
+        .leaflet-popup-content::-webkit-scrollbar { width: 6px; }
+        .leaflet-popup-content::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .leaflet-popup-content::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .leaflet-popup-content::-webkit-scrollbar-thumb:hover { background: #64748b; }
     </style>
 </head>
 <body class="h-full flex flex-col overflow-hidden font-sans antialiased">
@@ -121,7 +127,7 @@
         <div class="flex items-center space-x-2 sm:space-x-4">
             <div class="flex items-center space-x-1.5 sm:space-x-2 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] sm:text-xs font-semibold text-emerald-400 border border-emerald-500/20">
                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>API Active</span>
+                <span>API Connection Active</span>
             </div>
         </div>
     </header>
@@ -164,190 +170,211 @@
                 </div>
 
                 <div class="pt-2 border-t border-slate-800/60 space-y-3">
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <span class="text-xs font-medium text-slate-300">LMI Census Tract Layer</span>
-                        <input type="checkbox" id="lmiLayerToggle" checked class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-indigo-600 focus:ring-indigo-500">
+                    <label class="flex items-center space-x-3 cursor-pointer group">
+                        <input type="checkbox" id="toggleGeoJson" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 h-4 w-4">
+                        <span class="text-sm text-slate-300 group-hover:text-slate-100">Render Heavy GeoJSON Bounds</span>
                     </label>
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <span class="text-xs font-medium text-slate-300">USDA Eligibility Layer</span>
-                        <input type="checkbox" id="usdaLayerToggle" checked class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-600 focus:ring-emerald-500">
+                    <label class="flex items-center space-x-3 cursor-pointer group">
+                        <input type="checkbox" id="toggleCensus" checked class="rounded border-slate-800 bg-slate-950 text-indigo-600 h-4 w-4">
+                        <span class="text-sm text-slate-300 group-hover:text-slate-100">Fetch US Census Tract Data</span>
                     </label>
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <span class="text-xs font-medium text-slate-300">Property Listings (RentCast)</span>
-                        <input type="checkbox" id="rentcastLayerToggle" checked class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-amber-600 focus:ring-amber-500">
+                </div>
+
+                <div class="border-t border-slate-800 pt-2 mt-2">
+                    <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">LMI Overlay</span>
+                </div>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="toggleLMI" class="rounded border-slate-800 bg-slate-950 text-amber-500 h-4 w-4">
+                    <span class="text-sm text-slate-300 group-hover:text-slate-100">🏘️ FFIEC LMI Census Tracts</span>
+                </label>
+                <div id="lmiLoadingStatus" class="hidden text-xs text-amber-400 mt-1 pl-6">
+                    Loading LMI data...
+                </div>
+                <div id="lmiLegend" class="hidden pl-6 space-y-1 mt-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-sm bg-red-500 inline-block"></span>
+                        <span class="text-xs text-slate-400">Low Income (&lt;50% AMI)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-sm bg-amber-500 inline-block"></span>
+                        <span class="text-xs text-slate-400">Moderate Income (50-79% AMI)</span>
+                    </div>
+                </div>
+
+                <div class="mt-3 rounded-xl border border-emerald-900/70 bg-emerald-950/30 p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-emerald-300">OHCS FirstHome price screen</span>
+                        <span id="firstHomeStatus" class="text-[10px] font-semibold text-slate-500">Loading official limits…</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed text-slate-400">Use the saved-listing FirstHome view to require both an FFIEC LMI tract and a listed price at or below the applicable 2026 targeted or non-targeted maximum. This is a screening aid, not an approval.</p>
+                    <label class="block text-[11px] font-medium text-slate-400">County limit review
+                        <select id="firstHomeCountySelect" disabled class="mt-1 w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500">
+                            <option>Loading counties…</option>
+                        </select>
                     </label>
+                    <div id="firstHomeLimitControls" class="hidden space-y-2"></div>
+                    <button id="btnResetFirstHomeOverrides" type="button" disabled class="w-full rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-semibold text-slate-300 hover:border-emerald-700 hover:text-emerald-200 disabled:cursor-not-allowed disabled:opacity-40">Reset local review values to official limits</button>
+                    <p class="text-[10px] leading-relaxed text-slate-500">Slider edits are saved only in this browser for map review. They do not modify OHCS data or the protected dashboard sync feed.</p>
+                </div>
+
+                <!-- USDA RD Overlay -->
+                <div class="border-t border-slate-800 pt-2 mt-2">
+                    <span class="text-xs text-slate-500 font-medium uppercase tracking-wider">USDA RD Overlay</span>
+                </div>
+                <label class="flex items-center space-x-3 cursor-pointer group">
+                    <input type="checkbox" id="toggleUSDA" class="rounded border-slate-800 bg-slate-950 text-emerald-500 h-4 w-4">
+                    <span class="text-sm text-slate-300 group-hover:text-slate-100">USDA RD Ineligible Urban Areas</span>
+                </label>
+                <div id="usdaLegend" class="hidden pl-6 space-y-1 mt-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-3 h-3 rounded-sm bg-emerald-500 inline-block"></span>
+                        <span class="text-xs text-slate-400">Shaded ineligible urban area — properties outside are USDA RD eligible</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- RentCast Property Search Box -->
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-                    <div class="flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                        <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">RentCast For-Sale Search</h2>
-                    </div>
-                    <span id="propertyCountBadge" class="rounded-full bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 text-xs font-semibold text-amber-400">0 found</span>
+            <!-- Property Search -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+                <label class="block text-sm font-semibold text-slate-200">Property Listings</label>
+                
+                <!-- Search Mode Toggle -->
+                <div class="flex items-center space-x-2 bg-slate-800/50 rounded-lg p-1">
+                    <button id="btnModeOffline" class="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition bg-slate-950 text-slate-200 shadow-sm">
+                        📂 Saved Listings
+                    </button>
+                    <button id="btnModeLive" class="flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition text-slate-400 hover:text-slate-200">
+                        🔄 Live Pull
+                    </button>
                 </div>
+                <p id="searchModeLabel" class="text-xs text-slate-500 text-center">Viewing previously cached listings only</p>
 
-                <!-- API Usage Counter Progress Bar -->
-                <div class="space-y-1">
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-slate-400">API Usage (Free Tier)</span>
-                        <span id="apiCounterLabel" class="font-mono text-slate-300">0 / 50 pulls</span>
+                <div id="savedPullBrowser" class="rounded-xl border border-slate-800 bg-slate-950/60 p-3 space-y-2">
+                    <div class="flex items-center justify-between gap-2">
+                        <label for="savedPullSelect" class="text-xs font-semibold text-slate-300">Shared saved area pull</label>
+                        <button id="btnRefreshSavedPulls" type="button" class="text-[11px] font-semibold text-indigo-300 hover:text-indigo-200">Refresh</button>
                     </div>
-                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
-                        <div id="apiCounterBar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <select id="savedPullSelect" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                        <option value="">Loading saved pulls…</option>
+                    </select>
+                    <select id="savedOverlaySelect" class="w-full rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500">
+                        <option value="all">All eligible listings</option>
+                        <option value="lmi">LMI listings</option>
+                        <option value="usda">USDA RD eligible listings</option>
+                        <option value="lmiUsda">LMI + USDA RD eligible listings</option>
+                        <option value="firstHome">OHCS Flex Lending FirstHome: LMI + purchase-price review</option>
+                        <option value="fhfaCountyLimit">FHFA 2026: county listing-price review</option>
+                        <option value="calhfaMyHome">CalHFA MyHome: property context review</option>
+                        <option value="idahoMrbTaxExempt">Idaho Housing: Tax-Exempt/MRB price review</option>
+                        <option value="lakeviewNational">Lakeview National: Oregon + Washington review screen</option>
+                    </select>
+                    <p id="savedPullStatus" class="text-[11px] leading-relaxed text-slate-500">Cache-only shared saved listings. No Rentcast call is made.</p>
+                    <p class="rounded-lg border border-sky-900/70 bg-sky-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-sky-200">Lakeview National is a listing-review screen only. It does not verify income, credit, AUS, DTI, LTV/CLTV, occupancy, program availability, property eligibility, or underwriting.</p>
+                    <div id="fhfaCountyLimitDisclosure" class="hidden rounded-lg border border-indigo-900/70 bg-indigo-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-indigo-200 space-y-1">
+                        <p class="font-semibold text-indigo-300">FHFA 2026 Baseline &amp; High-Cost Limits (WA / OR / CA / ID)</p>
+                        <p>1-unit baseline: $806,495 | 2-unit: $1,032,475 | 3-unit: $1,248,025 | 4-unit: $1,551,025</p>
                     </div>
-                    <div class="flex items-center justify-between text-[10px] text-slate-500">
-                        <span id="apiPullsRemaining">50 pulls remaining</span>
-                        <button type="button" onclick="resetApiCounter()" class="text-slate-500 hover:text-slate-400 transition" title="Reset counter when billing cycle renews">Reset</button>
+                    <div id="calhfaMyHomeDisclosure" class="hidden rounded-lg border border-teal-900/70 bg-teal-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-teal-200 space-y-1">
+                        <p class="font-semibold text-teal-300">CalHFA MyHome Deferred-Payment Down Payment Assistance (California)</p>
+                        <p>Junior second mortgage up to 3% (first-time homebuyers) or 3.5% (non-conforming / FHA). Pair with CalHFA first mortgage.</p>
                     </div>
-                </div>
-
-                <!-- Search Mode: Offline (Cached) vs Live (Fresh API Pull) -->
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-medium text-slate-400">Search Mode</label>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" id="btnModeOffline" onclick="setSearchMode('offline')"
-                            class="rounded-xl border border-indigo-500 bg-indigo-500/10 px-3 py-2 text-xs font-semibold text-indigo-400 transition hover:bg-indigo-500/20 text-center">
-                            💾 Offline (Cached)
-                        </button>
-                        <button type="button" id="btnModeLive" onclick="setSearchMode('live')"
-                            class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-400 transition hover:bg-slate-800 hover:text-slate-200 text-center">
-                            ⚡ Live Pull (API)
-                        </button>
-                    </div>
-                    <p id="searchModeLabel" class="text-[10px] text-indigo-400 font-medium">Using cached data — zero API hits</p>
-                </div>
-
-                <!-- Location Query Input (City or Zip) -->
-                <div class="space-y-1">
-                    <label class="block text-xs font-medium text-slate-400">Oregon City or Zip Code</label>
-                    <input type="text" id="rentcastLocation" placeholder="e.g. Bend, 97701, Eugene"
-                        class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-amber-500">
-                    <p class="text-[10px] text-slate-500">Loads single-family homes, condos, & townhomes</p>
-                </div>
-
-                <!-- Price Range Filter Inputs -->
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Min Price</label>
-                        <input type="number" id="rentcastMinPrice" placeholder="No min" step="25000"
-                            class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-amber-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Max Price</label>
-                        <input type="number" id="rentcastMaxPrice" placeholder="No max" step="25000"
-                            class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-amber-500">
+                    <div id="idahoMrbTaxExemptDisclosure" class="hidden rounded-lg border border-amber-900/70 bg-amber-950/30 px-2.5 py-2 text-[10px] leading-relaxed text-amber-200 space-y-1">
+                        <p class="font-semibold text-amber-300">Idaho Housing (IHFA) 2026 MRB Tax-Exempt Purchase Price Limits</p>
+                        <p>Standard target cap: $524,627 | Targeted county cap: $641,211</p>
                     </div>
                 </div>
 
-                <!-- FirstHome Purchase-Price Screening Filter -->
-                <div class="space-y-1 rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3">
-                    <label class="flex items-center justify-between cursor-pointer">
-                        <span class="text-xs font-semibold text-emerald-300">OHCS FirstHome Price Screen</span>
-                        <input type="checkbox" id="firstHomePriceFilterToggle" class="h-4 w-4 rounded border-slate-700 bg-slate-950 text-emerald-600 focus:ring-emerald-500">
-                    </label>
-                    <p class="text-[10px] text-slate-400">Keep visible pins at or below official county purchase-price limits.</p>
+                <div id="pullLimitWarning" class="hidden rounded-lg bg-amber-500/10 border border-amber-500/20 p-2 text-xs text-amber-300">
+                    ⚠️ Live pulls cost 1 API hit against the 50/month free tier. Cached pulls are free.
                 </div>
 
-                <!-- Execute Search Button -->
-                <button type="button" id="btnSearch" onclick="searchRentcastProperties()"
-                    class="w-full rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-amber-500/10 hover:from-amber-600 hover:to-amber-700 transition flex items-center justify-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <span id="searchBtnText">Search Cached Properties</span>
-                </button>
-
-                <!-- Search Status Output Area -->
-                <div id="searchStatus" class="text-xs text-slate-400 hidden"></div>
-            </div>
-
-            <!-- Saved Listings Overlay Screening Sets Box -->
-            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
-                <div class="flex items-center justify-between pb-2 border-b border-slate-800">
-                    <div class="flex items-center space-x-2">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-                        <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Saved Listings Overlay Screening Sets</h2>
+                <div id="lakeviewPriceCapControls" class="hidden rounded-xl border border-sky-900/70 bg-sky-950/30 p-3 space-y-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span id="lakeviewPriceCapTitle" class="text-xs font-semibold uppercase tracking-wider text-sky-300">Lakeview National review caps</span>
+                        <button id="btnResetLakeviewPriceCap" type="button" class="text-[10px] font-semibold text-sky-400 hover:text-sky-300">Reset default</button>
                     </div>
-                    <span id="savedOverlayCountBadge" class="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-xs font-semibold text-emerald-400">0 loaded</span>
+                    <div id="lakeviewLocalCapSliders" class="space-y-2.5">
+                        <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-1" class="text-[10px] text-slate-300">1-unit / default</label><output id="lakeviewPriceCapValue-1" class="text-[10px] font-mono font-semibold text-sky-300">$832,700</output></div><input id="lakeviewPriceCap-1" data-lakeview-price-cap="1" type="range" min="200000" max="1249050" step="1000" value="832700" class="w-full accent-sky-400"></div>
+                        <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-2" class="text-[10px] text-slate-300">2-unit</label><output id="lakeviewPriceCapValue-2" class="text-[10px] font-mono font-semibold text-sky-300">$1,066,250</output></div><input id="lakeviewPriceCap-2" data-lakeview-price-cap="2" type="range" min="250000" max="1599050" step="1000" value="1066250" class="w-full accent-sky-400"></div>
+                        <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-3" class="text-[10px] text-slate-300">3-unit</label><output id="lakeviewPriceCapValue-3" class="text-[10px] font-mono font-semibold text-sky-300">$1,288,800</output></div><input id="lakeviewPriceCap-3" data-lakeview-price-cap="3" type="range" min="250000" max="1935000" step="1000" value="1288800" class="w-full accent-sky-400"></div>
+                        <div class="space-y-1"><div class="flex items-center justify-between gap-2"><label for="lakeviewPriceCap-4" class="text-[10px] text-slate-300">4-unit</label><output id="lakeviewPriceCapValue-4" class="text-[10px] font-mono font-semibold text-sky-300">$1,601,750</output></div><input id="lakeviewPriceCap-4" data-lakeview-price-cap="4" type="range" min="250000" max="2403000" step="1000" value="1601750" class="w-full accent-sky-400"></div>
+                    </div>
+                    <p id="lakeviewPriceCapSourceNote" class="text-[10px] leading-relaxed text-slate-500">2026 FHFA/Fannie Oregon baselines. Adjust annually after official limits update; saved only in this browser. The property’s verified unit count selects its cap.</p>
+                    <p class="text-[10px] leading-relaxed text-slate-500">This treats the listing price as the requested combined-financing review proxy only. It is not a final loan amount, qualification, or approval.</p>
                 </div>
                 
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Select Overlay Set</label>
-                        <select id="savedOverlaySelect" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-emerald-500">
-                            <option value="both">Both LMI &amp; USDA Eligible</option>
-                            <option value="lmiOnly">LMI Census Tract Eligible Only</option>
-                            <option value="usdaOnly">USDA Rural Development Eligible Only</option>
-                            <option value="allSaved">All Saved Listings (No Filter)</option>
-                            <option value="lakeviewNational">Lakeview National (Oregon Map Review)</option>
-                            <option value="fhfaLimits">FHFA Conforming Limits (WA / OR / CA / ID)</option>
-                            <option value="calHfaMyHome">CalHFA MyHome (California Review)</option>
-                            <option value="idahoMrb">Idaho Housing MRB (Tax-Exempt Review)</option>
-                        </select>
-                    </div>
-
-                    <div id="lakeviewSummaryBox" class="hidden rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3 space-y-1">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-semibold text-cyan-300">Lakeview National Review</span>
-                            <span id="lakeviewSummaryBadge" class="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold text-cyan-300">0 review-ready</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">Displays map-ready Oregon sale listings from the shared pipeline that meet geographic criteria.</p>
-                    </div>
-
-                    <div id="fhfaSummaryBox" class="hidden rounded-xl border border-sky-500/20 bg-sky-500/5 p-3 space-y-1">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-semibold text-sky-300">FHFA Conforming Loan Limits (2026)</span>
-                            <span id="fhfaSummaryBadge" class="rounded-full bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-300">WA / OR / CA / ID</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">Screens saved listings against official 1-unit baseline ($806,495) and designated high-cost limits.</p>
-                    </div>
-
-                    <div id="calHfaSummaryBox" class="hidden rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-3 space-y-1">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-semibold text-emerald-300">CalHFA MyHome Screening Set</span>
-                            <span id="calHfaSummaryBadge" class="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">California Review</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">Highlights California residential listings for CalHFA down payment assistance.</p>
-                    </div>
-
-                    <div id="idahoMrbSummaryBox" class="hidden rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 space-y-1">
-                        <div class="flex items-center justify-between text-xs">
-                            <span class="font-semibold text-amber-300">Idaho Housing (IHFA) MRB Limits (2026)</span>
-                            <span id="idahoMrbSummaryBadge" class="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">Idaho Review</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400">Screens Idaho listings against official 2026 IHFA Tax-Exempt purchase-price limits.</p>
-                    </div>
-
-                    <div class="flex space-x-2">
-                        <button type="button" onclick="displaySelectedOverlay()"
-                            class="flex-1 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-lg shadow-emerald-500/10 hover:from-emerald-600 hover:to-emerald-700 transition">
-                            Show On Map
-                        </button>
-                        <button type="button" onclick="exportSelectedOverlay()"
-                            class="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
-                            title="Export selected overlay set as JSON">
-                            Export
-                        </button>
-                    </div>
+                <input type="text" id="searchInput" placeholder="e.g., address, city, county" 
+                       class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500">
+                <button id="btnSearch" class="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/10 hover:from-indigo-600 hover:to-indigo-700">
+                    🔍 Search Listings
+                </button>
+                <button id="btnClearListings" class="w-full rounded-xl bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-600 mt-2">
+                    🗑️ Clear All Listings
+                </button>
+                <button id="btnResetMap" class="w-full rounded-xl bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-600 mt-2">
+                    🔄 Reset Map
+                </button>
+                <p id="searchError" class="text-xs text-red-400 hidden mt-1"></p>
+            </div>
+               
+            <!-- API Usage Tracker & Hard Stop Control -->
+            <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-3 shadow-sm">
+                <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
+                    <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">RentCast API Usage</h2>
                 </div>
+                
+                <!-- Counter Display -->
+                <div class="flex items-center justify-between">
+                    <span class="text-xs text-slate-400">Property Value Pulls</span>
+                    <span class="text-sm font-mono font-bold" id="apiCounterColor">0</span>
+                    <span class="text-xs text-slate-500">/ 50</span>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-800 rounded-full h-2">
+                    <div id="apiProgressBar" class="h-2 rounded-full transition-all duration-300" 
+                         style="width: 0%; background: #22c55e;"></div>
+                </div>
+                
+                <!-- Status Message -->
+                <p id="apiStatus" class="text-xs text-slate-500 text-center">
+                    Ready for property lookups
+                </p>
+                
+                <!-- Hard Stop Warning -->
+                <div id="apiHardStopWarning" class="hidden rounded-lg bg-red-500/10 border border-red-500/20 p-2 text-center">
+                    <p class="text-xs text-red-400 font-semibold">🛑 HARD STOP ACTIVE</p>
+                    <p class="text-xs text-red-400/70">50/50 pulls reached. API blocked.</p>
+                </div>
+                
+                <!-- Reset Button -->
+                <button id="btnResetApiCounter" 
+                        class="w-full rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-500 transition">
+                    🔄 Reset Monthly Counter (Admin)
+                </button>
+                
+                <p class="text-xs text-slate-600 text-center italic">
+                    Resets counter to 0. Use on billing cycle date 6th.
+                </p>
             </div>
 
-            <!-- Spatial Interaction Prospect Pipeline Enrollment Form Box -->
+            <!-- CRM Client Intake Capture Processing Box -->
             <div class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 space-y-4 shadow-sm">
                 <div class="flex items-center space-x-2 pb-2 border-b border-slate-800">
                     <svg class="w-4 h-4 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path></svg>
-                    <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Enroll Client Prospect</h2>
+                    <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-300">Lead Intake Capture</h2>
                 </div>
-
-                <form id="leadForm" class="space-y-3">
+                
+                <form id="intakeForm" class="space-y-3">
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Prospect Full Name</label>
-                        <input type="text" id="formName" required placeholder="e.g. Eleanor Vance" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-violet-500">
+                        <input type="text" id="formName" required placeholder="John Doe" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-violet-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-400 mb-1">Electronic Mail Address</label>
-                        <input type="email" id="formEmail" required placeholder="e.vance@oregonanalytics.io" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none transition focus:border-violet-500">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Email Address</label>
+                        <input type="email" id="formEmail" required placeholder="john@enterprise.com" class="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-violet-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-400 mb-1">Target Coordinates (Lat, Lng)</label>
@@ -366,7 +393,6 @@
 
         <!-- Right Split Main Window Area (Map Container + Bottom CRM Table Data Logs) -->
         <section id="rightMainSection" class="flex-1 flex flex-col overflow-hidden relative">
-
             <!-- Floating Filter Button on Mobile (Lets user jump to controls from the map) -->
             <button id="mobileFloatingFilterBtn" type="button" onclick="switchMobileView('controls')" class="md:hidden absolute top-3 left-3 z-30 flex items-center space-x-2 rounded-xl bg-slate-900/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-2 text-xs font-semibold text-white shadow-2xl hover:bg-slate-800 transition active:scale-95">
                 <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
