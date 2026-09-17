@@ -1883,6 +1883,117 @@ async function loadFirstHomeLimits() {
     function escapeHtml(str) {
         return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
+<!-- ================================================================= -->
+<!-- GEOSPHERE DYNAMIC MAP TOUCH & FTHB / VANTAGE AI SYNC CONNECTOR   -->
+<!-- ================================================================= -->
+<script>
+(function initGeoSphereLeadBridge() {
+  window.GeoSphereLeadBridge = {
+    // Current active spatial context
+    currentContext: {
+      latitude: null,
+      longitude: null,
+      censusTract: null,
+      county: null,
+      state: 'OR',
+      lmiStatus: null,       // 'Low' | 'Moderate' | 'Middle' | 'Upper'
+      isLmiEligible: false,
+      isUsdaEligible: false,
+      selectedListingId: null,
+      selectedListingPrice: null,
+      selectedAddress: null,
+      timestamp: null
+    },
+
+    // 1. Capture and resolve spatial context from any physical touch
+    async captureTouch(lat, lng, tract = null, label = null, meta = {}) {
+      const numLat = Number(lat);
+      const numLng = Number(lng);
+      
+      // Update form input fields if present
+      const coordsField = document.getElementById('formCoords');
+      const tractField = document.getElementById('formTract');
+      if (coordsField) coordsField.value = `${numLat.toFixed(4)}, ${numLng.toFixed(4)}`;
+      
+      let resolvedTract = tract;
+      if (!resolvedTract && typeof fetchCensusTractDataApi === 'function') {
+        resolvedTract = await fetchCensusTractDataApi(numLat, numLng);
+      }
+      if (tractField && resolvedTract) tractField.value = resolvedTract;
+
+      // Determine FFIEC and USDA flags from local layers or meta
+      const isUsda = meta.isUsda !== undefined ? meta.isUsda : (meta.layerName === 'usda');
+      const isLmi = meta.isLmi !== undefined ? meta.isLmi : (meta.layerName === 'lmi');
+
+      this.currentContext = {
+        latitude: numLat,
+        longitude: numLng,
+        censusTract: resolvedTract || '41039002747',
+        county: meta.county || 'Lane',
+        state: meta.state || 'OR',
+        lmiStatus: isLmi ? 'Moderate' : 'Middle',
+        isLmiEligible: Boolean(isLmi),
+        isUsdaEligible: Boolean(isUsda),
+        selectedListingId: meta.listingId || null,
+        selectedListingPrice: meta.price || null,
+        selectedAddress: label || meta.address || null,
+        timestamp: new Date().toISOString()
+      };
+
+      // Broadcast event for iframe parent (AI Studio / FTHB Dashboard)
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'GEOSPHERE_MAP_TOUCH',
+          spatialContext: this.currentContext
+        }, '*');
+      }
+
+      // Also dispatch local DOM event
+      window.dispatchEvent(new CustomEvent('geosphere:spatial_touch', {
+        detail: this.currentContext
+      }));
+
+      return this.currentContext;
+    },
+
+    // 2. Submit or attach captured spatial profile to lead contact
+    async syncLeadToHub(leadContactData = {}) {
+      const payload = {
+        ...leadContactData,
+        spatialProfile: this.currentContext,
+        syncedAt: new Date().toISOString()
+      };
+
+      try {
+        // Post to API endpoint or local webhook
+        const response = await fetch('/api/geosphere-lead-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        console.log('✓ Lead spatial profile synced:', result);
+        return result;
+      } catch (err) {
+        // Fallback: Store locally for offline/preview persistence
+        const existing = JSON.parse(localStorage.getItem('geosphere_captured_leads') || '[]');
+        existing.unshift(payload);
+        localStorage.setItem('geosphere_captured_leads', JSON.stringify(existing.slice(0, 50)));
+        console.warn('Network unavailable, cached lead locally:', payload);
+        return { status: 'cached', payload };
+      }
+    }
+  };
+
+  // Auto-bind to leaflet map when available
+  window.addEventListener('DOMContentLoaded', () => {
+    if (typeof map !== 'undefined' && map && map.on) {
+      map.on('click', (e) => {
+        window.GeoSphereLeadBridge.captureTouch(e.latlng.lat, e.latlng.lng, null, 'Custom Map Pin');
+      });
+    }
+  });
+})();
 </script>
     
 </body>
