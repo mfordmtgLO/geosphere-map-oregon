@@ -701,6 +701,7 @@ function setCachedResults(cacheKey, data) {
         synchronizeCrmUi();
         updateApiCounterUI();
 		syncApiCounterFromBackend();
+        switchMobileView(window.innerWidth < 768 ? 'map' : 'desktop');
     });
 
     function initializeMap() {
