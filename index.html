@@ -428,6 +428,77 @@
     
     
     <script>
+    // --- MOBILE VIEW STATE MANAGEMENT ---
+    window.currentMobileView = "map";
+
+    function switchMobileView(viewName) {
+        window.currentMobileView = viewName;
+        const sidebar = document.getElementById("sidebarPanel");
+        const rightSection = document.getElementById("rightMainSection");
+        const mapDiv = document.getElementById("map");
+        const crmDrawer = document.getElementById("crmDrawer");
+        const floatingFilterBtn = document.getElementById("mobileFloatingFilterBtn");
+        
+        const tabMap = document.getElementById("tabBtnMap");
+        const tabControls = document.getElementById("tabBtnControls");
+        const tabCrm = document.getElementById("tabBtnCrm");
+
+        const inactiveTabClass = "flex flex-1 flex-col items-center justify-center py-1.5 px-2 rounded-xl text-slate-400 font-medium text-xs transition hover:text-slate-200";
+        const activeTabClass = "flex flex-1 flex-col items-center justify-center py-1.5 px-2 rounded-xl text-indigo-400 font-semibold text-xs transition bg-slate-800/90 shadow-sm";
+
+        [tabMap, tabControls, tabCrm].forEach(btn => {
+            if (btn) btn.className = inactiveTabClass;
+        });
+
+        if (window.innerWidth < 768) {
+            if (viewName === "map") {
+                if (tabMap) tabMap.className = activeTabClass;
+                if (sidebar) sidebar.classList.add("hidden");
+                if (rightSection) rightSection.classList.remove("hidden");
+                if (mapDiv) mapDiv.classList.remove("hidden");
+                if (crmDrawer) {
+                    crmDrawer.classList.add("hidden");
+                    crmDrawer.classList.remove("flex-1", "h-full");
+                }
+                if (floatingFilterBtn) floatingFilterBtn.classList.remove("hidden");
+                
+                setTimeout(() => {
+                    if (map) map.invalidateSize();
+                }, 100);
+            } else if (viewName === "controls") {
+                if (tabControls) tabControls.className = activeTabClass;
+                if (sidebar) sidebar.classList.remove("hidden");
+                if (rightSection) rightSection.classList.add("hidden");
+                if (floatingFilterBtn) floatingFilterBtn.classList.add("hidden");
+            } else if (viewName === "crm") {
+                if (tabCrm) tabCrm.className = activeTabClass;
+                if (sidebar) sidebar.classList.add("hidden");
+                if (rightSection) rightSection.classList.remove("hidden");
+                if (mapDiv) mapDiv.classList.add("hidden");
+                if (crmDrawer) {
+                    crmDrawer.classList.remove("hidden");
+                    crmDrawer.classList.add("flex-1", "h-full");
+                }
+                if (floatingFilterBtn) floatingFilterBtn.classList.add("hidden");
+            }
+        } else {
+            // Restore standard desktop layout
+            if (sidebar) sidebar.classList.remove("hidden");
+            if (rightSection) rightSection.classList.remove("hidden");
+            if (mapDiv) mapDiv.classList.remove("hidden");
+            if (crmDrawer) {
+                crmDrawer.classList.remove("hidden", "flex-1", "h-full");
+            }
+            if (floatingFilterBtn) floatingFilterBtn.classList.add("hidden");
+            setTimeout(() => {
+                if (map) map.invalidateSize();
+            }, 100);
+        }
+    }
+
+    window.addEventListener("resize", () => {
+        switchMobileView(window.innerWidth < 768 ? window.currentMobileView : "desktop");
+    });
     // --- 0. CONFIGURATION ---
     // API key stored in Vercel Environment Variables — never exposed to browser
     const MAX_PULLS = 50;
